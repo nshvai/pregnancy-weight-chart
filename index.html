@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestational Weight Journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:       #1a1a2e;
+  --ink-soft:  #5c5c7a;
+  --ink-muted: #9494b0;
+  --rose:      #e8637a;
+  --rose-pale: #fce8ec;
+  --rose-mid:  #f5a8b4;
+  --sage:      #5b8c7a;
+  --sage-pale: #e6f0ec;
+  --cream:     #fdfaf6;
+  --white:     #ffffff;
+  --border:    rgba(26,26,46,0.09);
+  --shadow-sm: 0 2px 8px rgba(26,26,46,0.06);
+  --shadow-md: 0 8px 32px rgba(26,26,46,0.10);
+  --shadow-lg: 0 20px 60px rgba(26,26,46,0.13);
+  --r-sm: 12px; --r-md: 20px; --r-lg: 28px; --r-xl: 36px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink:       #eeeef5;
+    --ink-soft:  #a8a8c0;
+    --ink-muted: #6e6e88;
+    --rose:      #e8637a;
+    --rose-pale: rgba(232,99,122,0.15);
+    --rose-mid:  #c04560;
+    --sage:      #7ab8a4;
+    --sage-pale: rgba(91,140,122,0.15);
+    --cream:     #13131f;
+    --white:     #1e1e2e;
+    --border:    rgba(255,255,255,0.08);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-md: 0 8px 32px rgba(0,0,0,0.4);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  body::before {
+    background:
+      radial-gradient(ellipse 70% 50% at 10% 0%,  rgba(232,99,122,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 90% 100%, rgba(91,140,122,0.05) 0%, transparent 50%);
+  }
+  .toggle-wrap  { background: #0e0e1a; }
+  .unit-toggle  { background: #0e0e1a; }
+  .toggle-btn.active { background: #2a2a3e; }
+  input[type="number"], input[type="date"] { background: #17172a; color: var(--ink); border-color: var(--border); }
+  input[type="number"]:focus, input[type="date"]:focus { background: #1e1e32; }
+  .pill { background: #1a1a2e; }
+  .btn-ghost { border-color: var(--border); }
+  .btn-ghost:hover { background: #2a2a3e; }
+  .btn-export { background: #1e1e2e; color: var(--ink-soft); border-color: var(--border); }
+  .btn-export:hover { background: var(--sage-pale); }
+  .btn-remove { background: #1a1a2a; }
+  .about-card details summary::after { color: var(--rose); }
+  .about-body .disclaimer { background: #2a1e00; border-color: #f4b942; color: #c89a40; }
+  #fafafa, .meas-row input { background: #17172a; }
+  .chart-empty-text { color: var(--ink-muted); }
+  /* keep chart backgrounds transparent so dark bg shows through */
+  .share-toast { background: #2a2a3e; color: var(--ink); border-color: var(--border); }
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: "DM Sans", system-ui, sans-serif;
+  color: var(--ink); background: var(--cream);
+  min-height: 100vh; overflow-x: hidden;
+}
+body::before {
+  content: ""; position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 10% 0%,  rgba(232,99,122,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 90% 100%, rgba(91,140,122,0.06)  0%, transparent 50%),
+    radial-gradient(ellipse 40% 30% at 60% 40%,  rgba(232,99,122,0.04) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── Layout ── */
+.wrap { position: relative; z-index: 1; max-width: 1060px; margin: 0 auto; padding: 0 20px 72px; }
+
+/* ── Hero ── */
+.hero { padding: 56px 0 40px; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--rose); background: var(--rose-pale);
+  padding: 5px 14px; border-radius: 999px; margin-bottom: 16px;
+}
+.hero-eyebrow svg { flex-shrink: 0; }
+h1 {
+  font-family: "DM Serif Display", Georgia, serif;
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  line-height: 1.08; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 14px;
+}
+h1 em { font-style: italic; color: var(--rose); }
+.hero-sub { font-size: 1.03rem; line-height: 1.65; color: var(--ink-soft); max-width: 720px; font-weight: 300; }
+
+/* ── Chart card ── */
+.chart-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-xl); box-shadow: var(--shadow-lg);
+  padding: 28px 24px 20px; margin-bottom: 20px;
+  position: relative; overflow: hidden;
+}
+.chart-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--rose), var(--rose-mid), var(--sage));
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+}
+
+/* chart top row: title left, controls right */
+.chart-top-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+}
+.chart-title { font-family: "DM Serif Display", serif; font-size: 1.25rem; color: var(--ink); }
+
+.chart-controls-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* segmented toggle */
+.toggle-wrap {
+  display: flex; align-items: center;
+  background: #f3f0eb; border-radius: 10px; padding: 3px;
+}
+.toggle-btn {
+  font-family: inherit; font-size: 0.78rem; font-weight: 600;
+  border: none; border-radius: 8px; padding: 5px 13px; cursor: pointer;
+  background: transparent; color: var(--ink-muted);
+  transition: background 0.18s, color 0.18s; white-space: nowrap;
+}
+.toggle-btn.active { background: var(--white); color: var(--ink); box-shadow: var(--shadow-sm); }
+
+/* unit toggle — compact version of same pattern */
+.unit-toggle { background: #eef5f2; }
+.unit-toggle .toggle-btn.active { background: var(--white); color: var(--sage); }
+
+/* export button */
+.btn-export {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: inherit; font-size: 0.78rem; font-weight: 600;
+  border: 1.5px solid var(--border); border-radius: 9px; padding: 5px 12px;
+  background: var(--white); color: var(--ink-soft); cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s; white-space: nowrap;
+}
+.btn-export:hover { background: var(--sage-pale); border-color: rgba(91,140,122,0.3); color: var(--sage); }
+.btn-export svg { flex-shrink: 0; }
+
+.legend-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.75rem; font-weight: 500; color: var(--ink-soft);
+  padding: 4px 11px; border-radius: 999px;
+  border: 1px solid var(--border); background: #fafafa;
+}
+.pill-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* empty state */
+.chart-wrap { position: relative; }
+#chart { width: 100%; height: 520px; }
+.chart-empty {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; pointer-events: none; opacity: 1; transition: opacity 0.3s;
+}
+.chart-empty.hidden { opacity: 0; }
+.chart-empty-icon { font-size: 2.2rem; }
+.chart-empty-text { font-size: 0.92rem; color: var(--ink-muted); font-style: italic; text-align: center; max-width: 260px; line-height: 1.5; }
+
+/* weigh-in count badge */
+.wt-count-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; font-weight: 600; color: var(--sage);
+  background: var(--sage-pale); border-radius: 999px;
+  padding: 3px 11px; border: 1px solid rgba(91,140,122,0.2); margin-left: 8px;
+}
+.wt-count-badge.hidden { display: none; }
+
+.chart-hint { margin-top: 14px; font-size: 0.82rem; color: var(--ink-muted); font-style: italic; text-align: center; }
+
+/* ── Two-column layout ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+/* ── Panels ── */
+.panel {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-sm); padding: 24px;
+}
+.panel-title {
+  font-family: "DM Serif Display", serif; font-size: 1.1rem; color: var(--ink);
+  margin-bottom: 18px; display: flex; align-items: center; gap: 9px;
+}
+.panel-icon {
+  width: 30px; height: 30px; background: var(--rose-pale); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* ── Form fields ── */
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.field-label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 6px; letter-spacing: 0.01em; }
+.field-hint { font-size: 0.75rem; color: var(--ink-muted); margin-top: 5px; font-style: italic; }
+.field-input-wrap { position: relative; }
+.field-unit { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 0.83rem; color: var(--ink-muted); pointer-events: none; font-weight: 500; }
+
+input[type="number"], input[type="date"] {
+  width: 100%; border: 1.5px solid var(--border); border-radius: var(--r-sm);
+  padding: 11px 14px; font-family: inherit; font-size: 0.97rem;
+  color: var(--ink); background: #fafafa;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  -moz-appearance: textfield;
+}
+input[type="number"] { padding-right: 40px; }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type="number"]:focus, input[type="date"]:focus {
+  outline: none; border-color: var(--rose); background: var(--white);
+  box-shadow: 0 0 0 3px rgba(232,99,122,0.12);
+}
+input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
+
+/* computed week display */
+.week-computed {
+  display: none; align-items: center; gap: 8px;
+  background: var(--sage-pale); border: 1px solid rgba(91,140,122,0.2);
+  border-radius: var(--r-sm); padding: 10px 14px; margin-top: 8px;
+  font-size: 0.88rem; color: var(--sage);
+}
+.week-computed.visible { display: flex; }
+.week-computed strong { font-weight: 700; color: #3a6655; }
+
+/* ── Sliders ── */
+.range-wrap { position: relative; margin-top: 4px; }
+input[type="range"] {
+  -webkit-appearance: none; width: 100%; height: 4px;
+  background: linear-gradient(90deg, var(--rose) var(--pct,50%), var(--border) var(--pct,50%));
+  border-radius: 999px; cursor: pointer; outline: none; border: none; padding: 0;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--white); border: 2.5px solid var(--rose);
+  box-shadow: 0 2px 8px rgba(232,99,122,0.25); cursor: pointer; transition: transform 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type="range"]::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--white); border: 2.5px solid var(--rose); cursor: pointer;
+}
+.range-labels { display: flex; justify-content: space-between; font-size: 0.73rem; color: var(--ink-muted); margin-top: 5px; }
+
+/* ── Current summary ── */
+.current-summary {
+  background: linear-gradient(135deg, var(--rose-pale), rgba(91,140,122,0.07));
+  border: 1px solid rgba(232,99,122,0.2); border-radius: var(--r-md);
+  padding: 16px 18px; margin-top: 14px; display: none;
+}
+.current-summary.visible { display: block; }
+.current-summary-title { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rose); margin-bottom: 10px; }
+.current-summary-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat-val { font-family: "DM Serif Display", serif; font-size: 1.5rem; color: var(--ink); line-height: 1; }
+.stat-lbl { font-size: 0.73rem; color: var(--ink-soft); margin-top: 2px; }
+.pct-label { font-size: 0.72rem; color: var(--ink-muted); margin-top: 3px; font-style: italic; }
+
+/* ── Measurements table ── */
+.meas-table { margin-top: 4px; }
+.meas-header {
+  display: grid; grid-template-columns: 1fr 1fr 36px; gap: 8px;
+  font-size: 0.73rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-muted); padding: 0 2px 8px; border-bottom: 1px solid var(--border); margin-bottom: 8px;
+}
+#measurementRows { display: grid; gap: 8px; }
+.meas-row {
+  display: grid; grid-template-columns: 1fr 1fr 36px; gap: 8px;
+  align-items: center; animation: slideIn 0.2s ease;
+}
+@keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+.meas-row input { padding: 9px 12px; font-size: 0.9rem; }
+.btn-remove {
+  width: 36px; height: 36px; border: 1.5px solid var(--border); border-radius: 9px;
+  background: #fafafa; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--ink-muted); transition: background 0.15s, border-color 0.15s, color 0.15s; font-size: 1rem; flex-shrink: 0;
+}
+.btn-remove:hover { background: var(--rose-pale); border-color: var(--rose); color: var(--rose); }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: inherit; font-size: 0.88rem; font-weight: 600;
+  border: none; border-radius: var(--r-sm); padding: 10px 18px;
+  cursor: pointer; transition: all 0.18s; letter-spacing: 0.01em;
+}
+.btn-primary { background: var(--rose); color: var(--white); box-shadow: 0 4px 14px rgba(232,99,122,0.3); }
+.btn-primary:hover { background: #d94f68; box-shadow: 0 6px 20px rgba(232,99,122,0.4); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--ink-soft); border: 1.5px solid var(--border); }
+.btn-ghost:hover { background: #f7f3ef; border-color: var(--ink-muted); color: var(--ink); }
+.btn-sage { background: var(--sage-pale); color: var(--sage); border: 1.5px solid rgba(91,140,122,0.25); }
+.btn-sage:hover { background: rgba(91,140,122,0.18); }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+/* ── About ── */
+.about-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+.about-card details summary {
+  list-style: none; cursor: pointer; padding: 18px 24px;
+  font-family: "DM Serif Display", serif; font-size: 1.05rem; color: var(--ink);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.about-card details summary::-webkit-details-marker { display: none; }
+.about-card details summary::after { content: "＋"; font-size: 1.1rem; color: var(--rose); }
+.about-card details[open] summary::after { content: "－"; }
+.about-body { padding: 0 24px 22px; font-size: 0.88rem; line-height: 1.7; color: var(--ink-soft); border-top: 1px solid var(--border); }
+.about-body p { margin-top: 12px; }
+.about-body a { color: var(--rose); text-decoration: none; }
+.about-body a:hover { text-decoration: underline; }
+.about-body .disclaimer { background: #fff8e6; border-left: 3px solid #f4b942; border-radius: 4px; padding: 10px 14px; margin-top: 14px; color: #7a5c1a; font-size: 0.82rem; }
+
+/* ── Footer ── */
+.footer { margin-top: 40px; text-align: center; font-size: 0.82rem; color: var(--ink-muted); }
+.footer a { color: var(--rose); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* ── Share toast ── */
+.share-toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--cream);
+  font-size: 0.85rem; font-weight: 500;
+  padding: 10px 20px; border-radius: 999px;
+  box-shadow: var(--shadow-md);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  white-space: nowrap; z-index: 999;
+}
+.share-toast.show {
+  opacity: 1; transform: translateX(-50%) translateY(0);
+}
+
+/* ── Print styles ── */
+@media print {
+  body { background: white; }
+  body::before { display: none; }
+  .two-col, .panel-full, .about-card, .footer,
+  .chart-controls-row, .btn-row, .chart-hint { display: none !important; }
+  .wrap { padding: 0; }
+  .chart-card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
+  .chart-card::before { display: none; }
+  h1 { font-size: 1.6rem; }
+  #chart { height: 480px !important; }
+  .hero { padding: 20px 0 18px; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+  .two-col { grid-template-columns: 1fr; }
+  h1 { font-size: 2rem; }
+  .chart-card { padding: 18px 14px 14px; }
+  #chart { height: 400px; }
+  .current-summary-stats { grid-template-columns: 1fr; }
+  .wrap { padding: 0 14px 48px; }
+  .range-wrap { display: none; }
+  .chart-controls-row { gap: 7px; }
+}
+
+/* ── Animations ── */
+@keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+.hero       { animation: fadeUp 0.55s ease both; }
+.chart-card { animation: fadeUp 0.55s 0.10s ease both; }
+.two-col    { animation: fadeUp 0.55s 0.18s ease both; }
+.panel-full { animation: fadeUp 0.55s 0.22s ease both; }
+.about-card { animation: fadeUp 0.55s 0.26s ease both; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-eyebrow">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Evidence-based · Santos et al. 2018
+    </div>
+    <h1>Your <em>gestational</em> weight journey</h1>
+    <p class="hero-sub">Personalised reference curves from 218,000+ pregnancies across 33 international cohorts.</p>
+  </header>
+
+  <!-- Chart -->
+  <div class="chart-card">
+    <div class="chart-top-row">
+      <div class="chart-title">Weight by gestational age</div>
+      <div class="chart-controls-row">
+
+        <!-- Weight/gain mode toggle -->
+        <div class="toggle-wrap" role="group" aria-label="Chart mode">
+          <button class="toggle-btn active" id="modeAbsolute" type="button">Total weight</button>
+          <button class="toggle-btn"        id="modeGain"     type="button">Weight gain</button>
+        </div>
+
+        <!-- kg / lbs unit toggle -->
+        <div class="toggle-wrap unit-toggle" role="group" aria-label="Unit">
+          <button class="toggle-btn active" id="unitKg"  type="button">kg</button>
+          <button class="toggle-btn"        id="unitLbs" type="button">lbs</button>
+        </div>
+
+        <!-- Export / print -->
+        <button class="btn-export" id="exportBtn" type="button" title="Save as PNG or print">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v7M3.5 5.5l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 10h11v2H1z" fill="currentColor" opacity=".25"/><rect x="1" y="10" width="11" height="2" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
+          Export
+        </button>
+
+        <!-- Share link -->
+        <button class="btn-export" id="shareBtn" type="button" title="Copy shareable link">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="10" cy="2.5" r="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="10" cy="10.5" r="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="3" cy="6.5" r="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M8.5 3.3L4.5 5.7M8.5 9.7L4.5 7.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Share
+        </button>
+
+        <!-- Legend -->
+        <div class="legend-pills">
+          <div class="pill"><div class="pill-dot" style="background:rgba(232,99,122,0.35)"></div>P10–P90</div>
+          <div class="pill"><div class="pill-dot" style="background:rgba(232,99,122,0.65)"></div>P25–P75</div>
+          <div class="pill"><div class="pill-dot" style="background:#e8637a"></div>Median</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div id="chart"></div>
+      <div class="chart-empty" id="chartEmpty">
+        <div class="chart-empty-icon">📈</div>
+        <div class="chart-empty-text">Enter your height and pre-pregnancy weight to see your personalised curve</div>
+      </div>
+    </div>
+    <p class="chart-hint">Hover bands for reference range · trimester bands in grey · T = trimester</p>
+  </div>
+
+  <!-- Profile + Current measurement -->
+  <div class="two-col">
+
+    <!-- Profile -->
+    <div class="panel">
+      <div class="panel-title">
+        <div class="panel-icon">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1a6.5 6.5 0 1 0 0 13A6.5 6.5 0 0 0 7.5 1Z" stroke="#e8637a" stroke-width="1.3"/><path d="M7.5 10V7m0-2h.007" stroke="#e8637a" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+        Your profile
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="heightCm">Height</label>
+        <div class="field-input-wrap">
+          <input type="number" id="heightCm" min="120" max="220" step="0.5" value="165" placeholder="165">
+          <span class="field-unit" id="heightUnit">cm</span>
+        </div>
+        <div class="range-wrap">
+          <input type="range" id="heightSlider" min="140" max="200" step="1" value="165">
+          <div class="range-labels"><span>140</span><span>200</span></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="prePregWeightKg">Pre-pregnancy weight</label>
+        <div class="field-input-wrap">
+          <input type="number" id="prePregWeightKg" min="35" max="200" step="0.5" value="60" placeholder="60">
+          <span class="field-unit" id="weightUnit">kg</span>
+        </div>
+        <div class="range-wrap">
+          <input type="range" id="weightSlider" min="40" max="150" step="0.5" value="60">
+          <div class="range-labels" id="weightSliderLabels"><span>40</span><span>150</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Current measurement -->
+    <div class="panel">
+      <div class="panel-title">
+        <div class="panel-icon">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 13L7.5 2 13 13" stroke="#e8637a" stroke-width="1.3" stroke-linejoin="round"/><path d="M4 10h7" stroke="#e8637a" stroke-width="1.3"/></svg>
+        </div>
+        Today's measurement
+      </div>
+
+      <!-- Due date → auto-week -->
+      <div class="field">
+        <label class="field-label" for="dueDate">Due date <span style="font-weight:400;color:var(--ink-muted)">(optional)</span></label>
+        <input type="date" id="dueDate">
+        <div class="week-computed" id="weekComputed">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" stroke="#5b8c7a" stroke-width="1.2"/><path d="M6.5 3.5v3l2 1.5" stroke="#5b8c7a" stroke-width="1.2" stroke-linecap="round"/></svg>
+          You are currently <strong id="weekComputedVal">—</strong> weeks pregnant
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="currentWeek">Gestational age</label>
+        <div class="field-input-wrap">
+          <input type="number" id="currentWeek" min="0" max="44" step="0.5" placeholder="e.g. 24">
+          <span class="field-unit">wks</span>
+        </div>
+        <p class="field-hint">Filled automatically from due date, or enter manually</p>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="currentWeightKg">Current weight</label>
+        <div class="field-input-wrap">
+          <input type="number" id="currentWeightKg" min="30" max="250" step="0.1" placeholder="e.g. 66">
+          <span class="field-unit" id="currentWeightUnit">kg</span>
+        </div>
+      </div>
+
+      <div class="current-summary" id="currentSummary">
+        <div class="current-summary-title">Your snapshot</div>
+        <div class="current-summary-stats">
+          <div>
+            <div class="stat-val" id="snapGain">—</div>
+            <div class="stat-lbl" id="snapGainLbl">kg gained</div>
+          </div>
+          <div>
+            <div class="stat-val" id="snapPct">—</div>
+            <div class="stat-lbl">percentile</div>
+            <div class="pct-label" id="snapPctLabel"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Past weigh-ins -->
+  <div class="panel panel-full" style="margin-bottom:20px">
+    <div class="panel-title">
+      <div class="panel-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.5" stroke="#e8637a" stroke-width="1.3"/><path d="M5 2.5V1m5 1.5V1M1.5 6h12" stroke="#e8637a" stroke-width="1.3" stroke-linecap="round"/></svg>
+      </div>
+      Past weigh-ins
+      <span class="wt-count-badge hidden" id="measCountBadge"></span>
+    </div>
+    <div class="meas-table">
+      <div class="meas-header"><div>Week</div><div id="measWeightHeader">Weight (kg)</div><div></div></div>
+      <div id="measurementRows"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="addMeasurementBtn" type="button">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Add row
+      </button>
+      <button class="btn btn-sage"  id="sampleBtn" type="button">Load example</button>
+      <button class="btn btn-ghost" id="clearBtn"  type="button">Clear all</button>
+    </div>
+  </div>
+
+  <!-- About -->
+  <div class="about-card" style="margin-bottom:20px">
+    <details>
+      <summary>About this tool</summary>
+      <div class="about-body">
+        <p>This chart uses week-specific centile tables for six pre-pregnancy BMI groups, derived from a large international study of 218,216 pregnant women across 33 cohorts in Europe, North America, and Oceania. The reference population is predominantly of European/North American/Oceanian background — curves may be less representative for women from other ethnic backgrounds.</p>
+        <p>Bands show the P10–P90 (lighter) and P25–P75 (darker) reference intervals. The median (P50) is the solid line. Hovering over the bands shows the reference gain range at that week. Trimester boundaries appear as light grey bands. Your personal data appears as points connected by a trajectory line.</p>
+        <p>The <strong>Total weight</strong> mode shows your absolute weight. The <strong>Weight gain</strong> mode shows weight gained above your pre-pregnancy baseline — the quantity the research directly measures. Toggle between <strong>kg</strong> and <strong>lbs</strong> using the unit switcher. Entering your <strong>due date</strong> auto-calculates your current gestational week.</p>
+        <p>Percentile labels: <em>below typical</em> = below P10, <em>within typical range</em> = P10–P90, <em>above typical</em> = above P90.</p>
+        <p><strong>Export:</strong> click the Export button to save a PNG of the chart, or use your browser's print function (Ctrl/Cmd+P) for a clean printable version.</p>
+        <p>Reference: <a href="https://doi.org/10.1186/s12916-018-1189-1" target="_blank" rel="noopener">Santos et al., BMC Medicine 2018;16:201</a></p>
+        <div class="disclaimer">⚠ This tool is for informational purposes only and does not constitute medical advice. Always discuss weight and nutrition with your healthcare provider.</div>
+      </div>
+    </details>
+  </div>
+
+  <footer class="footer">
+    Original implementation by <a href="https://nshvai.github.io/" target="_blank" rel="noopener">Nadiya Shvai</a> &nbsp;·&nbsp; Data: Santos et al. 2018
+  </footer>
+</div>
+
+<!-- Share toast -->
+<div class="share-toast" id="shareToast" aria-live="polite"></div>
+
+<script>
+const CENTILES = {"Underweight": [{"week": 0.0, "P1": -2.25, "P2.3": -1.92, "P5": -1.58, "P10": -1.24, "P16": -0.96, "P20": -0.82, "P25": -0.66, "P50": -0.01, "P75": 0.65, "P80": 0.82, "P84": 0.98, "P90": 1.27, "P95": 1.66, "P97.7": 2.06, "P99": 2.44}, {"week": 1.0, "P1": -1.73, "P2.3": -1.37, "P5": -1.0, "P10": -0.61, "P16": -0.31, "P20": -0.15, "P25": 0.03, "P50": 0.75, "P75": 1.49, "P80": 1.68, "P84": 1.86, "P90": 2.19, "P95": 2.64, "P97.7": 3.08, "P99": 3.53}, {"week": 2.0, "P1": -1.47, "P2.3": -1.07, "P5": -0.66, "P10": -0.24, "P16": 0.09, "P20": 0.27, "P25": 0.46, "P50": 1.25, "P75": 2.07, "P80": 2.28, "P84": 2.48, "P90": 2.85, "P95": 3.35, "P97.7": 3.86, "P99": 4.36}, {"week": 3.0, "P1": -1.39, "P2.3": -0.97, "P5": -0.52, "P10": -0.07, "P16": 0.29, "P20": 0.48, "P25": 0.69, "P50": 1.55, "P75": 2.44, "P80": 2.67, "P84": 2.89, "P90": 3.3, "P95": 3.86, "P97.7": 4.42, "P99": 5.0}, {"week": 4.0, "P1": -1.46, "P2.3": -1.0, "P5": -0.53, "P10": -0.04, "P16": 0.34, "P20": 0.55, "P25": 0.77, "P50": 1.68, "P75": 2.65, "P80": 2.9, "P84": 3.13, "P90": 3.59, "P95": 4.2, "P97.7": 4.83, "P99": 5.48}, {"week": 5.0, "P1": -1.64, "P2.3": -1.15, "P5": -0.64, "P10": -0.12, "P16": 0.29, "P20": 0.5, "P25": 0.74, "P50": 1.72, "P75": 2.75, "P80": 3.02, "P84": 3.27, "P90": 3.77, "P95": 4.44, "P97.7": 5.15, "P99": 5.87}, {"week": 6.0, "P1": -1.85, "P2.3": -1.33, "P5": -0.8, "P10": -0.25, "P16": 0.18, "P20": 0.41, "P25": 0.66, "P50": 1.69, "P75": 2.79, "P80": 3.08, "P84": 3.35, "P90": 3.89, "P95": 4.62, "P97.7": 5.4, "P99": 6.22}, {"week": 7.0, "P1": -2.07, "P2.3": -1.52, "P5": -0.96, "P10": -0.38, "P16": 0.07, "P20": 0.3, "P25": 0.57, "P50": 1.65, "P75": 2.82, "P80": 3.13, "P84": 3.42, "P90": 4.0, "P95": 4.8, "P97.7": 5.66, "P99": 6.58}, {"week": 8.0, "P1": -2.25, "P2.3": -1.67, "P5": -1.08, "P10": -0.48, "P16": -0.01, "P20": 0.24, "P25": 0.51, "P50": 1.65, "P75": 2.88, "P80": 3.21, "P84": 3.53, "P90": 4.15, "P95": 5.02, "P97.7": 5.96, "P99": 6.99}, {"week": 9.0, "P1": -2.38, "P2.3": -1.78, "P5": -1.16, "P10": -0.53, "P16": -0.04, "P20": 0.22, "P25": 0.5, "P50": 1.69, "P75": 2.99, "P80": 3.34, "P84": 3.67, "P90": 4.34, "P95": 5.28, "P97.7": 6.32, "P99": 7.46}, {"week": 10.0, "P1": -2.47, "P2.3": -1.84, "P5": -1.19, "P10": -0.54, "P16": -0.04, "P20": 0.23, "P25": 0.53, "P50": 1.77, "P75": 3.13, "P80": 3.49, "P84": 3.85, "P90": 4.56, "P95": 5.57, "P97.7": 6.71, "P99": 7.98}, {"week": 11.0, "P1": -2.51, "P2.3": -1.85, "P5": -1.18, "P10": -0.51, "P16": 0.01, "P20": 0.29, "P25": 0.6, "P50": 1.88, "P75": 3.29, "P80": 3.68, "P84": 4.06, "P90": 4.81, "P95": 5.89, "P97.7": 7.13, "P99": 8.53}, {"week": 12.0, "P1": -2.5, "P2.3": -1.82, "P5": -1.13, "P10": -0.44, "P16": 0.11, "P20": 0.39, "P25": 0.71, "P50": 2.02, "P75": 3.49, "P80": 3.9, "P84": 4.29, "P90": 5.08, "P95": 6.23, "P97.7": 7.55, "P99": 9.08}, {"week": 13.0, "P1": -2.43, "P2.3": -1.74, "P5": -1.03, "P10": -0.32, "P16": 0.23, "P20": 0.53, "P25": 0.85, "P50": 2.2, "P75": 3.71, "P80": 4.13, "P84": 4.54, "P90": 5.37, "P95": 6.58, "P97.7": 7.98, "P99": 9.63}, {"week": 14.0, "P1": -2.33, "P2.3": -1.62, "P5": -0.89, "P10": -0.17, "P16": 0.4, "P20": 0.7, "P25": 1.03, "P50": 2.41, "P75": 3.96, "P80": 4.4, "P84": 4.81, "P90": 5.67, "P95": 6.94, "P97.7": 8.42, "P99": 10.17}, {"week": 15.0, "P1": -2.2, "P2.3": -1.47, "P5": -0.73, "P10": 0.01, "P16": 0.59, "P20": 0.89, "P25": 1.23, "P50": 2.64, "P75": 4.24, "P80": 4.68, "P84": 5.11, "P90": 6.0, "P95": 7.32, "P97.7": 8.87, "P99": 10.72}, {"week": 16.0, "P1": -2.04, "P2.3": -1.3, "P5": -0.55, "P10": 0.21, "P16": 0.8, "P20": 1.11, "P25": 1.46, "P50": 2.9, "P75": 4.54, "P80": 5.0, "P84": 5.44, "P90": 6.36, "P95": 7.73, "P97.7": 9.35, "P99": 11.3}, {"week": 17.0, "P1": -1.87, "P2.3": -1.11, "P5": -0.34, "P10": 0.43, "P16": 1.03, "P20": 1.35, "P25": 1.7, "P50": 3.18, "P75": 4.86, "P80": 5.34, "P84": 5.8, "P90": 6.75, "P95": 8.16, "P97.7": 9.86, "P99": 11.9}, {"week": 18.0, "P1": -1.7, "P2.3": -0.92, "P5": -0.13, "P10": 0.66, "P16": 1.27, "P20": 1.6, "P25": 1.96, "P50": 3.48, "P75": 5.22, "P80": 5.7, "P84": 6.18, "P90": 7.17, "P95": 8.64, "P97.7": 10.41, "P99": 12.55}, {"week": 19.0, "P1": -1.52, "P2.3": -0.72, "P5": 0.08, "P10": 0.89, "P16": 1.53, "P20": 1.86, "P25": 2.23, "P50": 3.8, "P75": 5.59, "P80": 6.1, "P84": 6.6, "P90": 7.62, "P95": 9.16, "P97.7": 11.01, "P99": 13.26}, {"week": 20.0, "P1": -1.28, "P2.3": -0.47, "P5": 0.36, "P10": 1.2, "P16": 1.85, "P20": 2.2, "P25": 2.58, "P50": 4.2, "P75": 6.06, "P80": 6.59, "P84": 7.1, "P90": 8.17, "P95": 9.77, "P97.7": 11.71, "P99": 14.08}, {"week": 21.0, "P1": -0.86, "P2.3": -0.01, "P5": 0.85, "P10": 1.71, "P16": 2.39, "P20": 2.76, "P25": 3.15, "P50": 4.84, "P75": 6.79, "P80": 7.35, "P84": 7.89, "P90": 9.01, "P95": 10.69, "P97.7": 12.74, "P99": 15.25}, {"week": 22.0, "P1": -0.42, "P2.3": 0.45, "P5": 1.34, "P10": 2.24, "P16": 2.94, "P20": 3.32, "P25": 3.73, "P50": 5.49, "P75": 7.52, "P80": 8.1, "P84": 8.67, "P90": 9.84, "P95": 11.6, "P97.7": 13.75, "P99": 16.38}, {"week": 23.0, "P1": 0.03, "P2.3": 0.93, "P5": 1.85, "P10": 2.78, "P16": 3.5, "P20": 3.89, "P25": 4.32, "P50": 6.14, "P75": 8.25, "P80": 8.85, "P84": 9.44, "P90": 10.66, "P95": 12.49, "P97.7": 14.72, "P99": 17.45}, {"week": 24.0, "P1": 0.52, "P2.3": 1.44, "P5": 2.38, "P10": 3.34, "P16": 4.09, "P20": 4.49, "P25": 4.93, "P50": 6.81, "P75": 8.98, "P80": 9.6, "P84": 10.2, "P90": 11.45, "P95": 13.34, "P97.7": 15.63, "P99": 18.43}, {"week": 25.0, "P1": 1.02, "P2.3": 1.96, "P5": 2.93, "P10": 3.9, "P16": 4.67, "P20": 5.08, "P25": 5.53, "P50": 7.46, "P75": 9.68, "P80": 10.31, "P84": 10.93, "P90": 12.21, "P95": 14.13, "P97.7": 16.45, "P99": 19.29}, {"week": 26.0, "P1": 1.52, "P2.3": 2.48, "P5": 3.46, "P10": 4.46, "P16": 5.24, "P20": 5.66, "P25": 6.12, "P50": 8.07, "P75": 10.33, "P80": 10.97, "P84": 11.6, "P90": 12.89, "P95": 14.83, "P97.7": 17.16, "P99": 20.0}, {"week": 27.0, "P1": 1.99, "P2.3": 2.96, "P5": 3.96, "P10": 4.96, "P16": 5.76, "P20": 6.18, "P25": 6.65, "P50": 8.64, "P75": 10.92, "P80": 11.57, "P84": 12.2, "P90": 13.5, "P95": 15.45, "P97.7": 17.78, "P99": 20.6}, {"week": 28.0, "P1": 2.4, "P2.3": 3.39, "P5": 4.39, "P10": 5.41, "P16": 6.21, "P20": 6.64, "P25": 7.11, "P50": 9.12, "P75": 11.43, "P80": 12.08, "P84": 12.71, "P90": 14.02, "P95": 15.96, "P97.7": 18.29, "P99": 21.08}, {"week": 29.0, "P1": 2.72, "P2.3": 3.71, "P5": 4.72, "P10": 5.75, "P16": 6.57, "P20": 7.0, "P25": 7.48, "P50": 9.51, "P75": 11.84, "P80": 12.49, "P84": 13.13, "P90": 14.44, "P95": 16.4, "P97.7": 18.72, "P99": 21.49}, {"week": 30.0, "P1": 2.91, "P2.3": 3.91, "P5": 4.94, "P10": 5.98, "P16": 6.8, "P20": 7.24, "P25": 7.72, "P50": 9.78, "P75": 12.13, "P80": 12.79, "P84": 13.44, "P90": 14.76, "P95": 16.72, "P97.7": 19.04, "P99": 21.81}, {"week": 31.0, "P1": 2.99, "P2.3": 4.0, "P5": 5.03, "P10": 6.09, "P16": 6.92, "P20": 7.37, "P25": 7.86, "P50": 9.94, "P75": 12.33, "P80": 13.0, "P84": 13.65, "P90": 14.99, "P95": 16.98, "P97.7": 19.32, "P99": 22.11}, {"week": 32.0, "P1": 3.08, "P2.3": 4.1, "P5": 5.16, "P10": 6.24, "P16": 7.09, "P20": 7.55, "P25": 8.05, "P50": 10.18, "P75": 12.63, "P80": 13.32, "P84": 13.98, "P90": 15.35, "P95": 17.38, "P97.7": 19.78, "P99": 22.61}, {"week": 33.0, "P1": 3.35, "P2.3": 4.41, "P5": 5.51, "P10": 6.62, "P16": 7.5, "P20": 7.97, "P25": 8.5, "P50": 10.71, "P75": 13.25, "P80": 13.96, "P84": 14.65, "P90": 16.08, "P95": 18.18, "P97.7": 20.67, "P99": 23.61}, {"week": 34.0, "P1": 3.86, "P2.3": 4.97, "P5": 6.11, "P10": 7.28, "P16": 8.2, "P20": 8.69, "P25": 9.24, "P50": 11.56, "P75": 14.23, "P80": 14.98, "P84": 15.71, "P90": 17.2, "P95": 19.41, "P97.7": 22.02, "P99": 25.11}, {"week": 35.0, "P1": 4.25, "P2.3": 5.39, "P5": 6.58, "P10": 7.79, "P16": 8.75, "P20": 9.27, "P25": 9.83, "P50": 12.26, "P75": 15.04, "P80": 15.82, "P84": 16.58, "P90": 18.14, "P95": 20.45, "P97.7": 23.17, "P99": 26.39}, {"week": 36.0, "P1": 4.46, "P2.3": 5.64, "P5": 6.87, "P10": 8.12, "P16": 9.11, "P20": 9.64, "P25": 10.23, "P50": 12.73, "P75": 15.62, "P80": 16.43, "P84": 17.21, "P90": 18.83, "P95": 21.21, "P97.7": 24.02, "P99": 27.33}, {"week": 37.0, "P1": 4.6, "P2.3": 5.81, "P5": 7.06, "P10": 8.34, "P16": 9.35, "P20": 9.9, "P25": 10.5, "P50": 13.08, "P75": 16.04, "P80": 16.87, "P84": 17.68, "P90": 19.33, "P95": 21.78, "P97.7": 24.65, "P99": 28.03}, {"week": 38.0, "P1": 4.7, "P2.3": 5.93, "P5": 7.21, "P10": 8.52, "P16": 9.56, "P20": 10.12, "P25": 10.74, "P50": 13.38, "P75": 16.41, "P80": 17.27, "P84": 18.09, "P90": 19.79, "P95": 22.28, "P97.7": 25.21, "P99": 28.65}, {"week": 39.0, "P1": 4.84, "P2.3": 6.1, "P5": 7.4, "P10": 8.75, "P16": 9.81, "P20": 10.39, "P25": 11.02, "P50": 13.72, "P75": 16.84, "P80": 17.71, "P84": 18.55, "P90": 20.29, "P95": 22.84, "P97.7": 25.82, "P99": 29.32}, {"week": 40.0, "P1": 5.05, "P2.3": 6.34, "P5": 7.68, "P10": 9.07, "P16": 10.17, "P20": 10.76, "P25": 11.41, "P50": 14.2, "P75": 17.41, "P80": 18.31, "P84": 19.18, "P90": 20.97, "P95": 23.59, "P97.7": 26.66, "P99": 30.23}, {"week": 41.0, "P1": 5.39, "P2.3": 6.72, "P5": 8.12, "P10": 9.55, "P16": 10.7, "P20": 11.31, "P25": 11.99, "P50": 14.9, "P75": 18.25, "P80": 19.18, "P84": 20.09, "P90": 21.95, "P95": 24.68, "P97.7": 27.86, "P99": 31.56}, {"week": 42.0, "P1": 5.93, "P2.3": 7.32, "P5": 8.78, "P10": 10.29, "P16": 11.49, "P20": 12.13, "P25": 12.85, "P50": 15.9, "P75": 19.42, "P80": 20.41, "P84": 21.36, "P90": 23.32, "P95": 26.18, "P97.7": 29.51, "P99": 33.38}, {"week": 43.0, "P1": 6.73, "P2.3": 8.21, "P5": 9.75, "P10": 11.34, "P16": 12.61, "P20": 13.3, "P25": 14.06, "P50": 17.3, "P75": 21.04, "P80": 22.09, "P84": 23.1, "P90": 25.18, "P95": 28.21, "P97.7": 31.74, "P99": 35.83}, {"week": 44.0, "P1": 7.86, "P2.3": 9.43, "P5": 11.08, "P10": 12.79, "P16": 14.15, "P20": 14.88, "P25": 15.7, "P50": 19.19, "P75": 23.21, "P80": 24.33, "P84": 25.42, "P90": 27.64, "P95": 30.9, "P97.7": 34.67, "P99": 39.04}], "Normal weight": [{"week": 0.0, "P1": -2.33, "P2.3": -1.99, "P5": -1.63, "P10": -1.26, "P16": -0.98, "P20": -0.83, "P25": -0.66, "P50": 0.0, "P75": 0.66, "P80": 0.82, "P84": 0.98, "P90": 1.26, "P95": 1.63, "P97.7": 2.0, "P99": 2.35}, {"week": 1.0, "P1": -2.3, "P2.3": -1.93, "P5": -1.54, "P10": -1.15, "P16": -0.84, "P20": -0.68, "P25": -0.51, "P50": 0.2, "P75": 0.91, "P80": 1.09, "P84": 1.25, "P90": 1.57, "P95": 1.97, "P97.7": 2.37, "P99": 2.76}, {"week": 2.0, "P1": -2.3, "P2.3": -1.9, "P5": -1.48, "P10": -1.06, "P16": -0.74, "P20": -0.56, "P25": -0.38, "P50": 0.38, "P75": 1.14, "P80": 1.33, "P84": 1.51, "P90": 1.85, "P95": 2.29, "P97.7": 2.74, "P99": 3.18}, {"week": 3.0, "P1": -2.35, "P2.3": -1.9, "P5": -1.45, "P10": -1.0, "P16": -0.65, "P20": -0.47, "P25": -0.27, "P50": 0.54, "P75": 1.35, "P80": 1.56, "P84": 1.76, "P90": 2.13, "P95": 2.62, "P97.7": 3.12, "P99": 3.62}, {"week": 4.0, "P1": -2.43, "P2.3": -1.94, "P5": -1.45, "P10": -0.96, "P16": -0.59, "P20": -0.39, "P25": -0.18, "P50": 0.68, "P75": 1.56, "P80": 1.78, "P84": 1.99, "P90": 2.4, "P95": 2.95, "P97.7": 3.51, "P99": 4.09}, {"week": 5.0, "P1": -2.55, "P2.3": -2.01, "P5": -1.47, "P10": -0.94, "P16": -0.54, "P20": -0.33, "P25": -0.1, "P50": 0.81, "P75": 1.75, "P80": 1.99, "P84": 2.22, "P90": 2.67, "P95": 3.28, "P97.7": 3.92, "P99": 4.6}, {"week": 6.0, "P1": -2.71, "P2.3": -2.1, "P5": -1.5, "P10": -0.93, "P16": -0.5, "P20": -0.28, "P25": -0.03, "P50": 0.93, "P75": 1.94, "P80": 2.2, "P84": 2.45, "P90": 2.94, "P95": 3.62, "P97.7": 4.36, "P99": 5.16}, {"week": 7.0, "P1": -2.9, "P2.3": -2.22, "P5": -1.56, "P10": -0.93, "P16": -0.47, "P20": -0.23, "P25": 0.03, "P50": 1.05, "P75": 2.12, "P80": 2.41, "P84": 2.68, "P90": 3.22, "P95": 3.98, "P97.7": 4.83, "P99": 5.79}, {"week": 8.0, "P1": -3.12, "P2.3": -2.34, "P5": -1.62, "P10": -0.94, "P16": -0.44, "P20": -0.19, "P25": 0.09, "P50": 1.17, "P75": 2.3, "P80": 2.61, "P84": 2.9, "P90": 3.49, "P95": 4.35, "P97.7": 5.33, "P99": 6.47}, {"week": 9.0, "P1": -3.35, "P2.3": -2.48, "P5": -1.68, "P10": -0.94, "P16": -0.41, "P20": -0.14, "P25": 0.15, "P50": 1.29, "P75": 2.49, "P80": 2.81, "P84": 3.13, "P90": 3.77, "P95": 4.73, "P97.7": 5.85, "P99": 7.19}, {"week": 10.0, "P1": -3.55, "P2.3": -2.6, "P5": -1.72, "P10": -0.94, "P16": -0.37, "P20": -0.08, "P25": 0.22, "P50": 1.41, "P75": 2.67, "P80": 3.02, "P84": 3.36, "P90": 4.05, "P95": 5.09, "P97.7": 6.36, "P99": 7.9}, {"week": 11.0, "P1": -3.72, "P2.3": -2.68, "P5": -1.75, "P10": -0.91, "P16": -0.31, "P20": -0.01, "P25": 0.3, "P50": 1.54, "P75": 2.86, "P80": 3.23, "P84": 3.58, "P90": 4.32, "P95": 5.44, "P97.7": 6.83, "P99": 8.56}, {"week": 12.0, "P1": -3.82, "P2.3": -2.72, "P5": -1.73, "P10": -0.85, "P16": -0.23, "P20": 0.08, "P25": 0.41, "P50": 1.69, "P75": 3.06, "P80": 3.44, "P84": 3.81, "P90": 4.58, "P95": 5.76, "P97.7": 7.23, "P99": 9.1}, {"week": 13.0, "P1": -3.83, "P2.3": -2.69, "P5": -1.67, "P10": -0.76, "P16": -0.12, "P20": 0.2, "P25": 0.54, "P50": 1.86, "P75": 3.26, "P80": 3.65, "P84": 4.03, "P90": 4.82, "P95": 6.04, "P97.7": 7.56, "P99": 9.48}, {"week": 14.0, "P1": -3.77, "P2.3": -2.6, "P5": -1.56, "P10": -0.64, "P16": 0.02, "P20": 0.35, "P25": 0.7, "P50": 2.05, "P75": 3.48, "P80": 3.87, "P84": 4.26, "P90": 5.07, "P95": 6.3, "P97.7": 7.82, "P99": 9.74}, {"week": 15.0, "P1": -3.66, "P2.3": -2.48, "P5": -1.43, "P10": -0.48, "P16": 0.18, "P20": 0.52, "P25": 0.88, "P50": 2.26, "P75": 3.72, "P80": 4.13, "P84": 4.52, "P90": 5.33, "P95": 6.57, "P97.7": 8.09, "P99": 9.98}, {"week": 16.0, "P1": -3.52, "P2.3": -2.33, "P5": -1.26, "P10": -0.31, "P16": 0.38, "P20": 0.72, "P25": 1.08, "P50": 2.5, "P75": 4.0, "P80": 4.41, "P84": 4.81, "P90": 5.64, "P95": 6.88, "P97.7": 8.39, "P99": 10.26}, {"week": 17.0, "P1": -3.36, "P2.3": -2.16, "P5": -1.08, "P10": -0.1, "P16": 0.59, "P20": 0.95, "P25": 1.32, "P50": 2.78, "P75": 4.32, "P80": 4.74, "P84": 5.14, "P90": 5.98, "P95": 7.24, "P97.7": 8.76, "P99": 10.61}, {"week": 18.0, "P1": -3.2, "P2.3": -1.99, "P5": -0.88, "P10": 0.12, "P16": 0.84, "P20": 1.2, "P25": 1.58, "P50": 3.09, "P75": 4.68, "P80": 5.12, "P84": 5.54, "P90": 6.4, "P95": 7.68, "P97.7": 9.22, "P99": 11.08}, {"week": 19.0, "P1": -3.02, "P2.3": -1.79, "P5": -0.66, "P10": 0.37, "P16": 1.11, "P20": 1.49, "P25": 1.89, "P50": 3.46, "P75": 5.11, "P80": 5.56, "P84": 5.99, "P90": 6.89, "P95": 8.21, "P97.7": 9.78, "P99": 11.66}, {"week": 20.0, "P1": -2.79, "P2.3": -1.53, "P5": -0.37, "P10": 0.69, "P16": 1.46, "P20": 1.85, "P25": 2.26, "P50": 3.9, "P75": 5.62, "P80": 6.09, "P84": 6.55, "P90": 7.47, "P95": 8.84, "P97.7": 10.46, "P99": 12.39}, {"week": 21.0, "P1": -2.52, "P2.3": -1.24, "P5": -0.05, "P10": 1.04, "P16": 1.84, "P20": 2.24, "P25": 2.68, "P50": 4.38, "P75": 6.19, "P80": 6.68, "P84": 7.15, "P90": 8.12, "P95": 9.54, "P97.7": 11.21, "P99": 13.19}, {"week": 22.0, "P1": -2.29, "P2.3": -1.0, "P5": 0.21, "P10": 1.33, "P16": 2.14, "P20": 2.56, "P25": 3.01, "P50": 4.78, "P75": 6.65, "P80": 7.16, "P84": 7.65, "P90": 8.65, "P95": 10.11, "P97.7": 11.83, "P99": 13.86}, {"week": 23.0, "P1": -1.77, "P2.3": -0.45, "P5": 0.79, "P10": 1.95, "P16": 2.8, "P20": 3.24, "P25": 3.7, "P50": 5.56, "P75": 7.52, "P80": 8.06, "P84": 8.57, "P90": 9.62, "P95": 11.15, "P97.7": 12.93, "P99": 15.02}, {"week": 24.0, "P1": -1.02, "P2.3": 0.33, "P5": 1.61, "P10": 2.82, "P16": 3.7, "P20": 4.16, "P25": 4.65, "P50": 6.6, "P75": 8.67, "P80": 9.23, "P84": 9.77, "P90": 10.87, "P95": 12.47, "P97.7": 14.33, "P99": 16.49}, {"week": 25.0, "P1": -0.26, "P2.3": 1.11, "P5": 2.41, "P10": 3.65, "P16": 4.56, "P20": 5.04, "P25": 5.55, "P50": 7.58, "P75": 9.74, "P80": 10.33, "P84": 10.89, "P90": 12.03, "P95": 13.69, "P97.7": 15.61, "P99": 17.83}, {"week": 26.0, "P1": 0.31, "P2.3": 1.67, "P5": 2.98, "P10": 4.23, "P16": 5.16, "P20": 5.64, "P25": 6.16, "P50": 8.24, "P75": 10.46, "P80": 11.06, "P84": 11.64, "P90": 12.81, "P95": 14.5, "P97.7": 16.44, "P99": 18.68}, {"week": 27.0, "P1": 0.71, "P2.3": 2.05, "P5": 3.35, "P10": 4.59, "P16": 5.52, "P20": 6.01, "P25": 6.53, "P50": 8.63, "P75": 10.88, "P80": 11.49, "P84": 12.08, "P90": 13.26, "P95": 14.96, "P97.7": 16.91, "P99": 19.14}, {"week": 28.0, "P1": 1.0, "P2.3": 2.31, "P5": 3.59, "P10": 4.82, "P16": 5.75, "P20": 6.24, "P25": 6.76, "P50": 8.87, "P75": 11.14, "P80": 11.75, "P84": 12.34, "P90": 13.52, "P95": 15.23, "P97.7": 17.17, "P99": 19.39}, {"week": 29.0, "P1": 1.24, "P2.3": 2.53, "P5": 3.79, "P10": 5.01, "P16": 5.94, "P20": 6.42, "P25": 6.95, "P50": 9.07, "P75": 11.36, "P80": 11.97, "P84": 12.57, "P90": 13.76, "P95": 15.48, "P97.7": 17.43, "P99": 19.65}, {"week": 30.0, "P1": 1.49, "P2.3": 2.77, "P5": 4.03, "P10": 5.25, "P16": 6.18, "P20": 6.67, "P25": 7.2, "P50": 9.35, "P75": 11.67, "P80": 12.3, "P84": 12.9, "P90": 14.11, "P95": 15.86, "P97.7": 17.84, "P99": 20.09}, {"week": 31.0, "P1": 1.83, "P2.3": 3.11, "P5": 4.37, "P10": 5.61, "P16": 6.56, "P20": 7.05, "P25": 7.59, "P50": 9.79, "P75": 12.17, "P80": 12.82, "P84": 13.44, "P90": 14.69, "P95": 16.48, "P97.7": 18.53, "P99": 20.85}, {"week": 32.0, "P1": 2.21, "P2.3": 3.51, "P5": 4.79, "P10": 6.06, "P16": 7.03, "P20": 7.54, "P25": 8.09, "P50": 10.36, "P75": 12.82, "P80": 13.49, "P84": 14.14, "P90": 15.44, "P95": 17.31, "P97.7": 19.44, "P99": 21.87}, {"week": 33.0, "P1": 2.59, "P2.3": 3.91, "P5": 5.23, "P10": 6.53, "P16": 7.53, "P20": 8.06, "P25": 8.63, "P50": 10.98, "P75": 13.55, "P80": 14.25, "P84": 14.92, "P90": 16.29, "P95": 18.25, "P97.7": 20.49, "P99": 23.05}, {"week": 34.0, "P1": 2.93, "P2.3": 4.29, "P5": 5.64, "P10": 6.98, "P16": 8.01, "P20": 8.56, "P25": 9.15, "P50": 11.59, "P75": 14.27, "P80": 15.01, "P84": 15.71, "P90": 17.14, "P95": 19.2, "P97.7": 21.56, "P99": 24.26}, {"week": 35.0, "P1": 3.22, "P2.3": 4.6, "P5": 5.99, "P10": 7.37, "P16": 8.43, "P20": 8.99, "P25": 9.6, "P50": 12.14, "P75": 14.92, "P80": 15.69, "P84": 16.42, "P90": 17.91, "P95": 20.06, "P97.7": 22.53, "P99": 25.35}, {"week": 36.0, "P1": 3.45, "P2.3": 4.86, "P5": 6.29, "P10": 7.7, "P16": 8.8, "P20": 9.37, "P25": 10.01, "P50": 12.62, "P75": 15.51, "P80": 16.3, "P84": 17.06, "P90": 18.6, "P95": 20.83, "P97.7": 23.39, "P99": 26.32}, {"week": 37.0, "P1": 3.65, "P2.3": 5.1, "P5": 6.55, "P10": 8.01, "P16": 9.13, "P20": 9.73, "P25": 10.38, "P50": 13.08, "P75": 16.06, "P80": 16.88, "P84": 17.66, "P90": 19.26, "P95": 21.56, "P97.7": 24.19, "P99": 27.21}, {"week": 38.0, "P1": 3.85, "P2.3": 5.33, "P5": 6.82, "P10": 8.31, "P16": 9.46, "P20": 10.07, "P25": 10.74, "P50": 13.52, "P75": 16.6, "P80": 17.44, "P84": 18.25, "P90": 19.89, "P95": 22.25, "P97.7": 24.95, "P99": 28.02}, {"week": 39.0, "P1": 4.07, "P2.3": 5.57, "P5": 7.09, "P10": 8.62, "P16": 9.81, "P20": 10.44, "P25": 11.13, "P50": 13.99, "P75": 17.15, "P80": 18.01, "P84": 18.84, "P90": 20.52, "P95": 22.94, "P97.7": 25.69, "P99": 28.81}, {"week": 40.0, "P1": 4.31, "P2.3": 5.85, "P5": 7.41, "P10": 8.97, "P16": 10.19, "P20": 10.84, "P25": 11.55, "P50": 14.49, "P75": 17.75, "P80": 18.63, "P84": 19.49, "P90": 21.21, "P95": 23.67, "P97.7": 26.47, "P99": 29.63}, {"week": 41.0, "P1": 4.59, "P2.3": 6.16, "P5": 7.76, "P10": 9.37, "P16": 10.63, "P20": 11.3, "P25": 12.03, "P50": 15.06, "P75": 18.42, "P80": 19.33, "P84": 20.21, "P90": 21.97, "P95": 24.5, "P97.7": 27.35, "P99": 30.55}, {"week": 42.0, "P1": 4.94, "P2.3": 6.55, "P5": 8.19, "P10": 9.85, "P16": 11.14, "P20": 11.83, "P25": 12.59, "P50": 15.73, "P75": 19.19, "P80": 20.13, "P84": 21.03, "P90": 22.84, "P95": 25.43, "P97.7": 28.34, "P99": 31.59}, {"week": 43.0, "P1": 5.34, "P2.3": 7.0, "P5": 8.7, "P10": 10.41, "P16": 11.75, "P20": 12.47, "P25": 13.25, "P50": 16.51, "P75": 20.09, "P80": 21.07, "P84": 22.0, "P90": 23.87, "P95": 26.53, "P97.7": 29.51, "P99": 32.82}, {"week": 44.0, "P1": 5.84, "P2.3": 7.55, "P5": 9.31, "P10": 11.09, "P16": 12.48, "P20": 13.22, "P25": 14.04, "P50": 17.43, "P75": 21.15, "P80": 22.16, "P84": 23.13, "P90": 25.06, "P95": 27.8, "P97.7": 30.86, "P99": 34.25}], "Overweight": [{"week": 0.0, "P1": -2.36, "P2.3": -2.0, "P5": -1.63, "P10": -1.25, "P16": -0.97, "P20": -0.82, "P25": -0.66, "P50": -0.01, "P75": 0.64, "P80": 0.81, "P84": 0.96, "P90": 1.25, "P95": 1.63, "P97.7": 2.02, "P99": 2.4}, {"week": 1.0, "P1": -2.37, "P2.3": -1.95, "P5": -1.53, "P10": -1.11, "P16": -0.78, "P20": -0.61, "P25": -0.43, "P50": 0.3, "P75": 1.03, "P80": 1.22, "P84": 1.39, "P90": 1.73, "P95": 2.16, "P97.7": 2.61, "P99": 3.05}, {"week": 2.0, "P1": -2.48, "P2.3": -1.99, "P5": -1.5, "P10": -1.02, "P16": -0.65, "P20": -0.46, "P25": -0.26, "P50": 0.56, "P75": 1.39, "P80": 1.6, "P84": 1.8, "P90": 2.17, "P95": 2.67, "P97.7": 3.19, "P99": 3.71}, {"week": 3.0, "P1": -2.65, "P2.3": -2.09, "P5": -1.53, "P10": -0.98, "P16": -0.57, "P20": -0.36, "P25": -0.13, "P50": 0.79, "P75": 1.71, "P80": 1.95, "P84": 2.17, "P90": 2.59, "P95": 3.16, "P97.7": 3.76, "P99": 4.37}, {"week": 4.0, "P1": -2.92, "P2.3": -2.26, "P5": -1.62, "P10": -1.0, "P16": -0.54, "P20": -0.3, "P25": -0.05, "P50": 0.97, "P75": 2.0, "P80": 2.26, "P84": 2.51, "P90": 2.99, "P95": 3.64, "P97.7": 4.33, "P99": 5.04}, {"week": 5.0, "P1": -3.26, "P2.3": -2.49, "P5": -1.76, "P10": -1.07, "P16": -0.55, "P20": -0.29, "P25": 0.0, "P50": 1.12, "P75": 2.26, "P80": 2.55, "P84": 2.83, "P90": 3.37, "P95": 4.11, "P97.7": 4.9, "P99": 5.74}, {"week": 6.0, "P1": -3.66, "P2.3": -2.78, "P5": -1.95, "P10": -1.17, "P16": -0.6, "P20": -0.3, "P25": 0.01, "P50": 1.24, "P75": 2.49, "P80": 2.82, "P84": 3.12, "P90": 3.73, "P95": 4.56, "P97.7": 5.47, "P99": 6.45}, {"week": 7.0, "P1": -4.12, "P2.3": -3.11, "P5": -2.17, "P10": -1.3, "P16": -0.67, "P20": -0.35, "P25": 0.0, "P50": 1.34, "P75": 2.7, "P80": 3.05, "P84": 3.39, "P90": 4.06, "P95": 5.0, "P97.7": 6.03, "P99": 7.17}, {"week": 8.0, "P1": -4.62, "P2.3": -3.46, "P5": -2.41, "P10": -1.45, "P16": -0.75, "P20": -0.4, "P25": -0.03, "P50": 1.41, "P75": 2.88, "P80": 3.26, "P84": 3.63, "P90": 4.37, "P95": 5.41, "P97.7": 6.58, "P99": 7.9}, {"week": 9.0, "P1": -5.12, "P2.3": -3.82, "P5": -2.65, "P10": -1.6, "P16": -0.85, "P20": -0.47, "P25": -0.07, "P50": 1.46, "P75": 3.03, "P80": 3.44, "P84": 3.84, "P90": 4.64, "P95": 5.78, "P97.7": 7.09, "P99": 8.6}, {"week": 10.0, "P1": -5.59, "P2.3": -4.15, "P5": -2.86, "P10": -1.73, "P16": -0.93, "P20": -0.53, "P25": -0.11, "P50": 1.51, "P75": 3.15, "P80": 3.59, "P84": 4.01, "P90": 4.87, "P95": 6.11, "P97.7": 7.55, "P99": 9.24}, {"week": 11.0, "P1": -5.99, "P2.3": -4.41, "P5": -3.03, "P10": -1.82, "P16": -0.98, "P20": -0.56, "P25": -0.12, "P50": 1.55, "P75": 3.26, "P80": 3.72, "P84": 4.16, "P90": 5.05, "P95": 6.37, "P97.7": 7.93, "P99": 9.78}, {"week": 12.0, "P1": -6.25, "P2.3": -4.57, "P5": -3.12, "P10": -1.86, "P16": -0.99, "P20": -0.56, "P25": -0.1, "P50": 1.61, "P75": 3.35, "P80": 3.82, "P84": 4.27, "P90": 5.19, "P95": 6.57, "P97.7": 8.21, "P99": 10.18}, {"week": 13.0, "P1": -6.37, "P2.3": -4.62, "P5": -3.11, "P10": -1.83, "P16": -0.94, "P20": -0.5, "P25": -0.05, "P50": 1.67, "P75": 3.42, "P80": 3.9, "P84": 4.36, "P90": 5.3, "P95": 6.7, "P97.7": 8.38, "P99": 10.43}, {"week": 14.0, "P1": -6.37, "P2.3": -4.58, "P5": -3.05, "P10": -1.74, "P16": -0.85, "P20": -0.41, "P25": 0.04, "P50": 1.77, "P75": 3.52, "P80": 3.99, "P84": 4.45, "P90": 5.39, "P95": 6.8, "P97.7": 8.51, "P99": 10.59}, {"week": 15.0, "P1": -6.29, "P2.3": -4.48, "P5": -2.94, "P10": -1.62, "P16": -0.73, "P20": -0.29, "P25": 0.17, "P50": 1.89, "P75": 3.64, "P80": 4.12, "P84": 4.58, "P90": 5.52, "P95": 6.94, "P97.7": 8.65, "P99": 10.73}, {"week": 16.0, "P1": -6.18, "P2.3": -4.35, "P5": -2.8, "P10": -1.47, "P16": -0.57, "P20": -0.13, "P25": 0.33, "P50": 2.06, "P75": 3.82, "P80": 4.3, "P84": 4.76, "P90": 5.71, "P95": 7.13, "P97.7": 8.84, "P99": 10.93}, {"week": 17.0, "P1": -6.05, "P2.3": -4.21, "P5": -2.64, "P10": -1.3, "P16": -0.39, "P20": 0.06, "P25": 0.53, "P50": 2.29, "P75": 4.07, "P80": 4.55, "P84": 5.02, "P90": 5.98, "P95": 7.41, "P97.7": 9.14, "P99": 11.23}, {"week": 18.0, "P1": -5.91, "P2.3": -4.05, "P5": -2.46, "P10": -1.1, "P16": -0.17, "P20": 0.29, "P25": 0.76, "P50": 2.57, "P75": 4.4, "P80": 4.89, "P84": 5.37, "P90": 6.35, "P95": 7.8, "P97.7": 9.55, "P99": 11.66}, {"week": 19.0, "P1": -5.78, "P2.3": -3.9, "P5": -2.27, "P10": -0.88, "P16": 0.08, "P20": 0.55, "P25": 1.05, "P50": 2.92, "P75": 4.82, "P80": 5.33, "P84": 5.82, "P90": 6.83, "P95": 8.33, "P97.7": 10.12, "P99": 12.26}, {"week": 20.0, "P1": -5.62, "P2.3": -3.71, "P5": -2.05, "P10": -0.61, "P16": 0.38, "P20": 0.88, "P25": 1.39, "P50": 3.35, "P75": 5.33, "P80": 5.87, "P84": 6.38, "P90": 7.43, "P95": 8.98, "P97.7": 10.82, "P99": 13.02}, {"week": 21.0, "P1": -5.54, "P2.3": -3.61, "P5": -1.91, "P10": -0.43, "P16": 0.6, "P20": 1.11, "P25": 1.65, "P50": 3.69, "P75": 5.77, "P80": 6.33, "P84": 6.87, "P90": 7.96, "P95": 9.57, "P97.7": 11.46, "P99": 13.7}, {"week": 22.0, "P1": -5.65, "P2.3": -3.73, "P5": -2.02, "P10": -0.52, "P16": 0.53, "P20": 1.06, "P25": 1.61, "P50": 3.72, "P75": 5.86, "P80": 6.44, "P84": 6.99, "P90": 8.11, "P95": 9.75, "P97.7": 11.67, "P99": 13.93}, {"week": 23.0, "P1": -5.13, "P2.3": -3.15, "P5": -1.37, "P10": 0.21, "P16": 1.33, "P20": 1.89, "P25": 2.47, "P50": 4.73, "P75": 7.04, "P80": 7.65, "P84": 8.24, "P90": 9.44, "P95": 11.18, "P97.7": 13.2, "P99": 15.56}, {"week": 24.0, "P1": -4.35, "P2.3": -2.28, "P5": -0.41, "P10": 1.26, "P16": 2.46, "P20": 3.06, "P25": 3.69, "P50": 6.13, "P75": 8.63, "P80": 9.29, "P84": 9.93, "P90": 11.22, "P95": 13.08, "P97.7": 15.23, "P99": 17.72}, {"week": 25.0, "P1": -3.84, "P2.3": -1.75, "P5": 0.15, "P10": 1.88, "P16": 3.11, "P20": 3.73, "P25": 4.39, "P50": 6.95, "P75": 9.57, "P80": 10.26, "P84": 10.93, "P90": 12.27, "P95": 14.2, "P97.7": 16.42, "P99": 18.97}, {"week": 26.0, "P1": -3.5, "P2.3": -1.44, "P5": 0.45, "P10": 2.18, "P16": 3.43, "P20": 4.06, "P25": 4.73, "P50": 7.34, "P75": 10.02, "P80": 10.73, "P84": 11.41, "P90": 12.78, "P95": 14.73, "P97.7": 16.97, "P99": 19.51}, {"week": 27.0, "P1": -3.13, "P2.3": -1.12, "P5": 0.75, "P10": 2.47, "P16": 3.71, "P20": 4.35, "P25": 5.02, "P50": 7.66, "P75": 10.37, "P80": 11.1, "P84": 11.78, "P90": 13.16, "P95": 15.12, "P97.7": 17.34, "P99": 19.86}, {"week": 28.0, "P1": -2.72, "P2.3": -0.76, "P5": 1.08, "P10": 2.78, "P16": 4.03, "P20": 4.66, "P25": 5.34, "P50": 7.99, "P75": 10.73, "P80": 11.46, "P84": 12.15, "P90": 13.53, "P95": 15.49, "P97.7": 17.69, "P99": 20.17}, {"week": 29.0, "P1": -2.32, "P2.3": -0.4, "P5": 1.41, "P10": 3.1, "P16": 4.35, "P20": 4.98, "P25": 5.67, "P50": 8.34, "P75": 11.11, "P80": 11.84, "P84": 12.54, "P90": 13.93, "P95": 15.89, "P97.7": 18.09, "P99": 20.55}, {"week": 30.0, "P1": -1.97, "P2.3": -0.08, "P5": 1.72, "P10": 3.41, "P16": 4.67, "P20": 5.31, "P25": 6.0, "P50": 8.72, "P75": 11.53, "P80": 12.28, "P84": 12.98, "P90": 14.39, "P95": 16.38, "P97.7": 18.59, "P99": 21.04}, {"week": 31.0, "P1": -1.69, "P2.3": 0.2, "P5": 2.0, "P10": 3.71, "P16": 4.98, "P20": 5.64, "P25": 6.34, "P50": 9.12, "P75": 12.01, "P80": 12.77, "P84": 13.5, "P90": 14.94, "P95": 16.96, "P97.7": 19.21, "P99": 21.7}, {"week": 32.0, "P1": -1.47, "P2.3": 0.42, "P5": 2.25, "P10": 4.0, "P16": 5.3, "P20": 5.97, "P25": 6.69, "P50": 9.57, "P75": 12.56, "P80": 13.35, "P84": 14.1, "P90": 15.59, "P95": 17.68, "P97.7": 19.99, "P99": 22.54}, {"week": 33.0, "P1": -1.3, "P2.3": 0.62, "P5": 2.48, "P10": 4.28, "P16": 5.62, "P20": 6.32, "P25": 7.07, "P50": 10.06, "P75": 13.18, "P80": 14.01, "P84": 14.79, "P90": 16.34, "P95": 18.52, "P97.7": 20.92, "P99": 23.56}, {"week": 34.0, "P1": -1.13, "P2.3": 0.82, "P5": 2.73, "P10": 4.58, "P16": 5.97, "P20": 6.69, "P25": 7.48, "P50": 10.6, "P75": 13.87, "P80": 14.74, "P84": 15.56, "P90": 17.19, "P95": 19.47, "P97.7": 21.98, "P99": 24.72}, {"week": 35.0, "P1": -0.93, "P2.3": 1.06, "P5": 3.02, "P10": 4.93, "P16": 6.37, "P20": 7.12, "P25": 7.94, "P50": 11.21, "P75": 14.64, "P80": 15.55, "P84": 16.41, "P90": 18.11, "P95": 20.5, "P97.7": 23.12, "P99": 25.97}, {"week": 36.0, "P1": -0.67, "P2.3": 1.36, "P5": 3.37, "P10": 5.34, "P16": 6.84, "P20": 7.62, "P25": 8.47, "P50": 11.88, "P75": 15.47, "P80": 16.42, "P84": 17.32, "P90": 19.11, "P95": 21.6, "P97.7": 24.33, "P99": 27.29}, {"week": 37.0, "P1": -0.35, "P2.3": 1.72, "P5": 3.78, "P10": 5.8, "P16": 7.35, "P20": 8.16, "P25": 9.04, "P50": 12.59, "P75": 16.34, "P80": 17.33, "P84": 18.27, "P90": 20.14, "P95": 22.73, "P97.7": 25.56, "P99": 28.63}, {"week": 38.0, "P1": -0.07, "P2.3": 2.03, "P5": 4.12, "P10": 6.2, "P16": 7.78, "P20": 8.62, "P25": 9.52, "P50": 13.19, "P75": 17.07, "P80": 18.1, "P84": 19.07, "P90": 21.0, "P95": 23.68, "P97.7": 26.6, "P99": 29.75}, {"week": 39.0, "P1": 0.13, "P2.3": 2.23, "P5": 4.34, "P10": 6.43, "P16": 8.04, "P20": 8.89, "P25": 9.81, "P50": 13.56, "P75": 17.53, "P80": 18.58, "P84": 19.58, "P90": 21.55, "P95": 24.28, "P97.7": 27.25, "P99": 30.45}, {"week": 40.0, "P1": 0.34, "P2.3": 2.43, "P5": 4.54, "P10": 6.65, "P16": 8.27, "P20": 9.13, "P25": 10.06, "P50": 13.86, "P75": 17.9, "P80": 18.96, "P84": 19.97, "P90": 21.97, "P95": 24.74, "P97.7": 27.74, "P99": 30.96}, {"week": 41.0, "P1": 0.68, "P2.3": 2.77, "P5": 4.89, "P10": 7.01, "P16": 8.65, "P20": 9.52, "P25": 10.47, "P50": 14.33, "P75": 18.44, "P80": 19.52, "P84": 20.55, "P90": 22.58, "P95": 25.39, "P97.7": 28.43, "P99": 31.69}, {"week": 42.0, "P1": 1.25, "P2.3": 3.37, "P5": 5.52, "P10": 7.68, "P16": 9.36, "P20": 10.25, "P25": 11.22, "P50": 15.19, "P75": 19.42, "P80": 20.54, "P84": 21.6, "P90": 23.69, "P95": 26.57, "P97.7": 29.68, "P99": 33.01}, {"week": 43.0, "P1": 2.21, "P2.3": 4.38, "P5": 6.61, "P10": 8.85, "P16": 10.6, "P20": 11.52, "P25": 12.53, "P50": 16.68, "P75": 21.11, "P80": 22.28, "P84": 23.39, "P90": 25.57, "P95": 28.59, "P97.7": 31.83, "P99": 35.29}, {"week": 44.0, "P1": 3.68, "P2.3": 5.97, "P5": 8.31, "P10": 10.69, "P16": 12.54, "P20": 13.53, "P25": 14.61, "P50": 19.03, "P75": 23.77, "P80": 25.02, "P84": 26.21, "P90": 28.54, "P95": 31.76, "P97.7": 35.22, "P99": 38.89}], "Obesity grade 1": [{"week": 0.0, "P1": -2.46, "P2.3": -2.04, "P5": -1.63, "P10": -1.24, "P16": -0.95, "P20": -0.79, "P25": -0.63, "P50": 0.0, "P75": 0.64, "P80": 0.81, "P84": 0.96, "P90": 1.25, "P95": 1.65, "P97.7": 2.06, "P99": 2.49}, {"week": 1.0, "P1": -2.43, "P2.3": -1.94, "P5": -1.46, "P10": -1.01, "P16": -0.67, "P20": -0.5, "P25": -0.31, "P50": 0.42, "P75": 1.15, "P80": 1.33, "P84": 1.51, "P90": 1.85, "P95": 2.3, "P97.7": 2.78, "P99": 3.28}, {"week": 2.0, "P1": -2.53, "P2.3": -1.96, "P5": -1.41, "P10": -0.89, "P16": -0.51, "P20": -0.31, "P25": -0.1, "P50": 0.73, "P75": 1.57, "P80": 1.78, "P84": 1.98, "P90": 2.37, "P95": 2.89, "P97.7": 3.44, "P99": 4.02}, {"week": 3.0, "P1": -2.75, "P2.3": -2.1, "P5": -1.47, "P10": -0.88, "P16": -0.44, "P20": -0.21, "P25": 0.03, "P50": 0.97, "P75": 1.92, "P80": 2.16, "P84": 2.39, "P90": 2.83, "P95": 3.43, "P97.7": 4.06, "P99": 4.72}, {"week": 4.0, "P1": -3.08, "P2.3": -2.33, "P5": -1.62, "P10": -0.95, "P16": -0.45, "P20": -0.2, "P25": 0.07, "P50": 1.14, "P75": 2.2, "P80": 2.48, "P84": 2.73, "P90": 3.23, "P95": 3.91, "P97.7": 4.62, "P99": 5.38}, {"week": 5.0, "P1": -3.5, "P2.3": -2.65, "P5": -1.85, "P10": -1.09, "P16": -0.54, "P20": -0.25, "P25": 0.05, "P50": 1.24, "P75": 2.43, "P80": 2.74, "P84": 3.02, "P90": 3.58, "P95": 4.34, "P97.7": 5.15, "P99": 6.01}, {"week": 6.0, "P1": -4.01, "P2.3": -3.05, "P5": -2.15, "P10": -1.3, "P16": -0.68, "P20": -0.37, "P25": -0.03, "P50": 1.29, "P75": 2.61, "P80": 2.95, "P84": 3.27, "P90": 3.89, "P95": 4.74, "P97.7": 5.65, "P99": 6.62}, {"week": 7.0, "P1": -4.57, "P2.3": -3.5, "P5": -2.5, "P10": -1.56, "P16": -0.87, "P20": -0.52, "P25": -0.15, "P50": 1.3, "P75": 2.75, "P80": 3.13, "P84": 3.48, "P90": 4.16, "P95": 5.11, "P97.7": 6.11, "P99": 7.19}, {"week": 8.0, "P1": -5.16, "P2.3": -3.98, "P5": -2.87, "P10": -1.84, "P16": -1.09, "P20": -0.71, "P25": -0.3, "P50": 1.28, "P75": 2.86, "P80": 3.26, "P84": 3.65, "P90": 4.4, "P95": 5.43, "P97.7": 6.54, "P99": 7.73}, {"week": 9.0, "P1": -5.77, "P2.3": -4.47, "P5": -3.26, "P10": -2.14, "P16": -1.33, "P20": -0.92, "P25": -0.48, "P50": 1.23, "P75": 2.93, "P80": 3.37, "P84": 3.79, "P90": 4.6, "P95": 5.72, "P97.7": 6.93, "P99": 8.23}, {"week": 10.0, "P1": -6.34, "P2.3": -4.94, "P5": -3.64, "P10": -2.44, "P16": -1.57, "P20": -1.12, "P25": -0.65, "P50": 1.17, "P75": 2.98, "P80": 3.46, "P84": 3.9, "P90": 4.77, "P95": 5.97, "P97.7": 7.27, "P99": 8.68}, {"week": 11.0, "P1": -6.85, "P2.3": -5.35, "P5": -3.97, "P10": -2.7, "P16": -1.78, "P20": -1.31, "P25": -0.81, "P50": 1.1, "P75": 3.01, "P80": 3.51, "P84": 3.98, "P90": 4.9, "P95": 6.17, "P97.7": 7.55, "P99": 9.06}, {"week": 12.0, "P1": -7.25, "P2.3": -5.68, "P5": -4.23, "P10": -2.9, "P16": -1.95, "P20": -1.46, "P25": -0.94, "P50": 1.04, "P75": 3.03, "P80": 3.54, "P84": 4.03, "P90": 4.98, "P95": 6.31, "P97.7": 7.76, "P99": 9.34}, {"week": 13.0, "P1": -7.53, "P2.3": -5.9, "P5": -4.4, "P10": -3.04, "P16": -2.06, "P20": -1.56, "P25": -1.03, "P50": 1.0, "P75": 3.03, "P80": 3.56, "P84": 4.05, "P90": 5.03, "P95": 6.4, "P97.7": 7.89, "P99": 9.53}, {"week": 14.0, "P1": -7.68, "P2.3": -6.02, "P5": -4.5, "P10": -3.11, "P16": -2.11, "P20": -1.61, "P25": -1.07, "P50": 0.98, "P75": 3.04, "P80": 3.57, "P84": 4.07, "P90": 5.07, "P95": 6.46, "P97.7": 7.98, "P99": 9.66}, {"week": 15.0, "P1": -7.75, "P2.3": -6.06, "P5": -4.52, "P10": -3.12, "P16": -2.12, "P20": -1.61, "P25": -1.07, "P50": 1.0, "P75": 3.07, "P80": 3.6, "P84": 4.11, "P90": 5.12, "P95": 6.52, "P97.7": 8.07, "P99": 9.77}, {"week": 16.0, "P1": -7.77, "P2.3": -6.06, "P5": -4.5, "P10": -3.09, "P16": -2.07, "P20": -1.56, "P25": -1.02, "P50": 1.06, "P75": 3.14, "P80": 3.69, "P84": 4.2, "P90": 5.21, "P95": 6.63, "P97.7": 8.2, "P99": 9.93}, {"week": 17.0, "P1": -7.78, "P2.3": -6.04, "P5": -4.46, "P10": -3.02, "P16": -2.0, "P20": -1.48, "P25": -0.93, "P50": 1.18, "P75": 3.29, "P80": 3.84, "P84": 4.36, "P90": 5.39, "P95": 6.84, "P97.7": 8.44, "P99": 10.21}, {"week": 18.0, "P1": -7.78, "P2.3": -6.01, "P5": -4.39, "P10": -2.93, "P16": -1.88, "P20": -1.35, "P25": -0.79, "P50": 1.36, "P75": 3.51, "P80": 4.08, "P84": 4.61, "P90": 5.67, "P95": 7.15, "P97.7": 8.79, "P99": 10.62}, {"week": 19.0, "P1": -7.78, "P2.3": -5.96, "P5": -4.3, "P10": -2.79, "P16": -1.71, "P20": -1.17, "P25": -0.6, "P50": 1.62, "P75": 3.83, "P80": 4.41, "P84": 4.96, "P90": 6.05, "P95": 7.59, "P97.7": 9.29, "P99": 11.18}, {"week": 20.0, "P1": -7.74, "P2.3": -5.87, "P5": -4.16, "P10": -2.6, "P16": -1.49, "P20": -0.93, "P25": -0.34, "P50": 1.95, "P75": 4.24, "P80": 4.84, "P84": 5.41, "P90": 6.54, "P95": 8.14, "P97.7": 9.91, "P99": 11.88}, {"week": 21.0, "P1": -7.72, "P2.3": -5.79, "P5": -4.02, "P10": -2.42, "P16": -1.27, "P20": -0.69, "P25": -0.08, "P50": 2.29, "P75": 4.67, "P80": 5.29, "P84": 5.88, "P90": 7.06, "P95": 8.72, "P97.7": 10.57, "P99": 12.62}, {"week": 22.0, "P1": -7.71, "P2.3": -5.74, "P5": -3.93, "P10": -2.28, "P16": -1.1, "P20": -0.51, "P25": 0.12, "P50": 2.56, "P75": 5.02, "P80": 5.66, "P84": 6.27, "P90": 7.49, "P95": 9.21, "P97.7": 11.13, "P99": 13.27}, {"week": 23.0, "P1": -7.57, "P2.3": -5.54, "P5": -3.68, "P10": -1.98, "P16": -0.76, "P20": -0.14, "P25": 0.51, "P50": 3.04, "P75": 5.59, "P80": 6.26, "P84": 6.9, "P90": 8.16, "P95": 9.95, "P97.7": 11.96, "P99": 14.19}, {"week": 24.0, "P1": -7.17, "P2.3": -5.06, "P5": -3.12, "P10": -1.34, "P16": -0.06, "P20": 0.59, "P25": 1.28, "P50": 3.93, "P75": 6.63, "P80": 7.34, "P84": 8.01, "P90": 9.35, "P95": 11.24, "P97.7": 13.36, "P99": 15.73}, {"week": 25.0, "P1": -6.69, "P2.3": -4.49, "P5": -2.47, "P10": -0.61, "P16": 0.73, "P20": 1.4, "P25": 2.13, "P50": 4.92, "P75": 7.75, "P80": 8.5, "P84": 9.21, "P90": 10.62, "P95": 12.62, "P97.7": 14.86, "P99": 17.37}, {"week": 26.0, "P1": -6.31, "P2.3": -4.07, "P5": -2.0, "P10": -0.1, "P16": 1.28, "P20": 1.98, "P25": 2.72, "P50": 5.6, "P75": 8.53, "P80": 9.31, "P84": 10.04, "P90": 11.51, "P95": 13.58, "P97.7": 15.91, "P99": 18.51}, {"week": 27.0, "P1": -6.04, "P2.3": -3.8, "P5": -1.71, "P10": 0.21, "P16": 1.6, "P20": 2.3, "P25": 3.06, "P50": 5.99, "P75": 8.97, "P80": 9.76, "P84": 10.51, "P90": 12.01, "P95": 14.12, "P97.7": 16.5, "P99": 19.16}, {"week": 28.0, "P1": -5.88, "P2.3": -3.65, "P5": -1.57, "P10": 0.36, "P16": 1.75, "P20": 2.46, "P25": 3.22, "P50": 6.17, "P75": 9.19, "P80": 9.99, "P84": 10.75, "P90": 12.26, "P95": 14.4, "P97.7": 16.81, "P99": 19.5}, {"week": 29.0, "P1": -5.77, "P2.3": -3.56, "P5": -1.49, "P10": 0.43, "P16": 1.82, "P20": 2.54, "P25": 3.29, "P50": 6.26, "P75": 9.3, "P80": 10.1, "P84": 10.87, "P90": 12.4, "P95": 14.56, "P97.7": 16.99, "P99": 19.71}, {"week": 30.0, "P1": -5.7, "P2.3": -3.51, "P5": -1.45, "P10": 0.47, "P16": 1.87, "P20": 2.59, "P25": 3.35, "P50": 6.34, "P75": 9.42, "P80": 10.23, "P84": 11.01, "P90": 12.56, "P95": 14.75, "P97.7": 17.21, "P99": 19.96}, {"week": 31.0, "P1": -5.63, "P2.3": -3.43, "P5": -1.36, "P10": 0.57, "P16": 1.99, "P20": 2.71, "P25": 3.49, "P50": 6.53, "P75": 9.66, "P80": 10.49, "P84": 11.28, "P90": 12.86, "P95": 15.1, "P97.7": 17.62, "P99": 20.43}, {"week": 32.0, "P1": -5.52, "P2.3": -3.3, "P5": -1.2, "P10": 0.78, "P16": 2.23, "P20": 2.97, "P25": 3.77, "P50": 6.9, "P75": 10.15, "P80": 11.01, "P84": 11.83, "P90": 13.47, "P95": 15.79, "P97.7": 18.39, "P99": 21.31}, {"week": 33.0, "P1": -5.36, "P2.3": -3.08, "P5": -0.91, "P10": 1.14, "P16": 2.65, "P20": 3.42, "P25": 4.25, "P50": 7.54, "P75": 10.95, "P80": 11.85, "P84": 12.72, "P90": 14.44, "P95": 16.89, "P97.7": 19.64, "P99": 22.71}, {"week": 34.0, "P1": -5.16, "P2.3": -2.81, "P5": -0.55, "P10": 1.59, "P16": 3.17, "P20": 3.99, "P25": 4.86, "P50": 8.33, "P75": 11.94, "P80": 12.9, "P84": 13.81, "P90": 15.65, "P95": 18.25, "P97.7": 21.17, "P99": 24.44}, {"week": 35.0, "P1": -4.96, "P2.3": -2.53, "P5": -0.18, "P10": 2.05, "P16": 3.7, "P20": 4.56, "P25": 5.48, "P50": 9.13, "P75": 12.96, "P80": 13.98, "P84": 14.95, "P90": 16.9, "P95": 19.66, "P97.7": 22.76, "P99": 26.24}, {"week": 36.0, "P1": -4.79, "P2.3": -2.3, "P5": 0.11, "P10": 2.42, "P16": 4.15, "P20": 5.04, "P25": 6.0, "P50": 9.82, "P75": 13.84, "P80": 14.92, "P84": 15.94, "P90": 17.99, "P95": 20.9, "P97.7": 24.17, "P99": 27.84}, {"week": 37.0, "P1": -4.68, "P2.3": -2.16, "P5": 0.3, "P10": 2.66, "P16": 4.43, "P20": 5.35, "P25": 6.34, "P50": 10.29, "P75": 14.47, "P80": 15.58, "P84": 16.65, "P90": 18.78, "P95": 21.81, "P97.7": 25.22, "P99": 29.04}, {"week": 38.0, "P1": -4.6, "P2.3": -2.07, "P5": 0.41, "P10": 2.81, "P16": 4.61, "P20": 5.55, "P25": 6.56, "P50": 10.61, "P75": 14.9, "P80": 16.05, "P84": 17.15, "P90": 19.34, "P95": 22.47, "P97.7": 25.98, "P99": 29.91}, {"week": 39.0, "P1": -4.49, "P2.3": -1.96, "P5": 0.53, "P10": 2.95, "P16": 4.77, "P20": 5.72, "P25": 6.75, "P50": 10.87, "P75": 15.26, "P80": 16.44, "P84": 17.56, "P90": 19.81, "P95": 23.01, "P97.7": 26.61, "P99": 30.64}, {"week": 40.0, "P1": -4.3, "P2.3": -1.78, "P5": 0.72, "P10": 3.15, "P16": 4.99, "P20": 5.95, "P25": 6.99, "P50": 11.19, "P75": 15.66, "P80": 16.86, "P84": 18.0, "P90": 20.3, "P95": 23.57, "P97.7": 27.25, "P99": 31.37}, {"week": 41.0, "P1": -4.0, "P2.3": -1.47, "P5": 1.04, "P10": 3.49, "P16": 5.35, "P20": 6.33, "P25": 7.38, "P50": 11.65, "P75": 16.21, "P80": 17.44, "P84": 18.61, "P90": 20.96, "P95": 24.31, "P97.7": 28.07, "P99": 32.28}, {"week": 42.0, "P1": -3.55, "P2.3": -1.0, "P5": 1.54, "P10": 4.03, "P16": 5.92, "P20": 6.92, "P25": 8.0, "P50": 12.37, "P75": 17.05, "P80": 18.32, "P84": 19.52, "P90": 21.94, "P95": 25.38, "P97.7": 29.25, "P99": 33.58}, {"week": 43.0, "P1": -2.92, "P2.3": -0.32, "P5": 2.27, "P10": 4.83, "P16": 6.78, "P20": 7.8, "P25": 8.91, "P50": 13.44, "P75": 18.3, "P80": 19.61, "P84": 20.87, "P90": 23.38, "P95": 26.96, "P97.7": 30.99, "P99": 35.49}, {"week": 44.0, "P1": -2.05, "P2.3": 0.63, "P5": 3.31, "P10": 5.97, "P16": 8.0, "P20": 9.07, "P25": 10.23, "P50": 14.97, "P75": 20.08, "P80": 21.46, "P84": 22.77, "P90": 25.42, "P95": 29.19, "P97.7": 33.42, "P99": 38.17}], "Obesity grade 2": [{"week": 0.0, "P1": -2.42, "P2.3": -2.03, "P5": -1.65, "P10": -1.26, "P16": -0.97, "P20": -0.81, "P25": -0.65, "P50": 0.01, "P75": 0.67, "P80": 0.84, "P84": 0.99, "P90": 1.29, "P95": 1.67, "P97.7": 2.05, "P99": 2.44}, {"week": 1.0, "P1": -2.81, "P2.3": -2.36, "P5": -1.91, "P10": -1.46, "P16": -1.12, "P20": -0.95, "P25": -0.76, "P50": 0.0, "P75": 0.75, "P80": 0.94, "P84": 1.12, "P90": 1.46, "P95": 1.9, "P97.7": 2.34, "P99": 2.79}, {"week": 2.0, "P1": -3.2, "P2.3": -2.68, "P5": -2.16, "P10": -1.65, "P16": -1.26, "P20": -1.06, "P25": -0.84, "P50": 0.03, "P75": 0.89, "P80": 1.11, "P84": 1.31, "P90": 1.7, "P95": 2.21, "P97.7": 2.72, "P99": 3.24}, {"week": 3.0, "P1": -3.64, "P2.3": -3.03, "P5": -2.42, "P10": -1.83, "P16": -1.38, "P20": -1.15, "P25": -0.9, "P50": 0.09, "P75": 1.08, "P80": 1.33, "P84": 1.56, "P90": 2.01, "P95": 2.59, "P97.7": 3.19, "P99": 3.79}, {"week": 4.0, "P1": -4.11, "P2.3": -3.4, "P5": -2.7, "P10": -2.02, "P16": -1.5, "P20": -1.24, "P25": -0.95, "P50": 0.18, "P75": 1.31, "P80": 1.59, "P84": 1.86, "P90": 2.37, "P95": 3.04, "P97.7": 3.73, "P99": 4.43}, {"week": 5.0, "P1": -4.63, "P2.3": -3.81, "P5": -3.0, "P10": -2.22, "P16": -1.63, "P20": -1.33, "P25": -1.0, "P50": 0.28, "P75": 1.57, "P80": 1.89, "P84": 2.19, "P90": 2.77, "P95": 3.55, "P97.7": 4.34, "P99": 5.16}, {"week": 6.0, "P1": -5.21, "P2.3": -4.26, "P5": -3.33, "P10": -2.44, "P16": -1.77, "P20": -1.43, "P25": -1.06, "P50": 0.39, "P75": 1.84, "P80": 2.21, "P84": 2.55, "P90": 3.21, "P95": 4.09, "P97.7": 5.01, "P99": 5.94}, {"week": 7.0, "P1": -5.85, "P2.3": -4.75, "P5": -3.69, "P10": -2.68, "P16": -1.93, "P20": -1.55, "P25": -1.13, "P50": 0.5, "P75": 2.12, "P80": 2.53, "P84": 2.92, "P90": 3.66, "P95": 4.66, "P97.7": 5.7, "P99": 6.78}, {"week": 8.0, "P1": -6.51, "P2.3": -5.27, "P5": -4.08, "P10": -2.95, "P16": -2.11, "P20": -1.68, "P25": -1.22, "P50": 0.59, "P75": 2.39, "P80": 2.85, "P84": 3.28, "P90": 4.11, "P95": 5.23, "P97.7": 6.4, "P99": 7.62}, {"week": 9.0, "P1": -7.19, "P2.3": -5.8, "P5": -4.48, "P10": -3.23, "P16": -2.3, "P20": -1.83, "P25": -1.32, "P50": 0.66, "P75": 2.63, "P80": 3.13, "P84": 3.61, "P90": 4.52, "P95": 5.76, "P97.7": 7.07, "P99": 8.44}, {"week": 10.0, "P1": -7.84, "P2.3": -6.31, "P5": -4.86, "P10": -3.5, "P16": -2.5, "P20": -1.99, "P25": -1.44, "P50": 0.69, "P75": 2.82, "P80": 3.36, "P84": 3.87, "P90": 4.87, "P95": 6.21, "P97.7": 7.65, "P99": 9.15}, {"week": 11.0, "P1": -8.37, "P2.3": -6.73, "P5": -5.19, "P10": -3.74, "P16": -2.68, "P20": -2.14, "P25": -1.56, "P50": 0.68, "P75": 2.92, "P80": 3.5, "P84": 4.04, "P90": 5.09, "P95": 6.53, "P97.7": 8.06, "P99": 9.68}, {"week": 12.0, "P1": -8.73, "P2.3": -7.03, "P5": -5.42, "P10": -3.93, "P16": -2.84, "P20": -2.28, "P25": -1.68, "P50": 0.62, "P75": 2.93, "P80": 3.52, "P84": 4.07, "P90": 5.16, "P95": 6.65, "P97.7": 8.25, "P99": 9.95}, {"week": 13.0, "P1": -8.93, "P2.3": -7.19, "P5": -5.57, "P10": -4.06, "P16": -2.96, "P20": -2.4, "P25": -1.8, "P50": 0.51, "P75": 2.82, "P80": 3.41, "P84": 3.97, "P90": 5.07, "P95": 6.58, "P97.7": 8.21, "P99": 9.95}, {"week": 14.0, "P1": -9.0, "P2.3": -7.26, "P5": -5.65, "P10": -4.15, "P16": -3.06, "P20": -2.51, "P25": -1.92, "P50": 0.37, "P75": 2.65, "P80": 3.24, "P84": 3.8, "P90": 4.89, "P95": 6.39, "P97.7": 8.02, "P99": 9.77}, {"week": 15.0, "P1": -9.02, "P2.3": -7.3, "P5": -5.7, "P10": -4.22, "P16": -3.14, "P20": -2.6, "P25": -2.01, "P50": 0.24, "P75": 2.49, "P80": 3.07, "P84": 3.62, "P90": 4.7, "P95": 6.19, "P97.7": 7.82, "P99": 9.57}, {"week": 16.0, "P1": -9.05, "P2.3": -7.34, "P5": -5.74, "P10": -4.27, "P16": -3.2, "P20": -2.66, "P25": -2.08, "P50": 0.15, "P75": 2.39, "P80": 2.97, "P84": 3.52, "P90": 4.6, "P95": 6.09, "P97.7": 7.72, "P99": 9.48}, {"week": 17.0, "P1": -9.11, "P2.3": -7.38, "P5": -5.77, "P10": -4.29, "P16": -3.22, "P20": -2.67, "P25": -2.09, "P50": 0.15, "P75": 2.41, "P80": 2.99, "P84": 3.54, "P90": 4.63, "P95": 6.14, "P97.7": 7.79, "P99": 9.59}, {"week": 18.0, "P1": -9.14, "P2.3": -7.39, "P5": -5.75, "P10": -4.25, "P16": -3.16, "P20": -2.6, "P25": -2.01, "P50": 0.27, "P75": 2.57, "P80": 3.17, "P84": 3.73, "P90": 4.85, "P95": 6.39, "P97.7": 8.08, "P99": 9.93}, {"week": 19.0, "P1": -9.12, "P2.3": -7.32, "P5": -5.65, "P10": -4.11, "P16": -2.98, "P20": -2.41, "P25": -1.8, "P50": 0.55, "P75": 2.92, "P80": 3.54, "P84": 4.12, "P90": 5.27, "P95": 6.87, "P97.7": 8.63, "P99": 10.54}, {"week": 20.0, "P1": -9.07, "P2.3": -7.22, "P5": -5.49, "P10": -3.89, "P16": -2.73, "P20": -2.14, "P25": -1.51, "P50": 0.93, "P75": 3.4, "P80": 4.04, "P84": 4.65, "P90": 5.85, "P95": 7.52, "P97.7": 9.35, "P99": 11.35}, {"week": 21.0, "P1": -9.12, "P2.3": -7.24, "P5": -5.46, "P10": -3.82, "P16": -2.62, "P20": -2.01, "P25": -1.36, "P50": 1.17, "P75": 3.73, "P80": 4.39, "P84": 5.02, "P90": 6.27, "P95": 8.01, "P97.7": 9.91, "P99": 11.99}, {"week": 22.0, "P1": -9.19, "P2.3": -7.26, "P5": -5.44, "P10": -3.75, "P16": -2.52, "P20": -1.89, "P25": -1.21, "P50": 1.41, "P75": 4.07, "P80": 4.76, "P84": 5.42, "P90": 6.71, "P95": 8.52, "P97.7": 10.5, "P99": 12.67}, {"week": 23.0, "P1": -9.11, "P2.3": -7.12, "P5": -5.23, "P10": -3.47, "P16": -2.18, "P20": -1.52, "P25": -0.81, "P50": 1.94, "P75": 4.74, "P80": 5.47, "P84": 6.16, "P90": 7.53, "P95": 9.43, "P97.7": 11.52, "P99": 13.8}, {"week": 24.0, "P1": -8.8, "P2.3": -6.71, "P5": -4.73, "P10": -2.87, "P16": -1.5, "P20": -0.79, "P25": -0.04, "P50": 2.9, "P75": 5.89, "P80": 6.68, "P84": 7.42, "P90": 8.88, "P95": 10.92, "P97.7": 13.15, "P99": 15.59}, {"week": 25.0, "P1": -8.45, "P2.3": -6.29, "P5": -4.23, "P10": -2.28, "P16": -0.84, "P20": -0.1, "P25": 0.69, "P50": 3.8, "P75": 6.97, "P80": 7.8, "P84": 8.58, "P90": 10.14, "P95": 12.29, "P97.7": 14.66, "P99": 17.24}, {"week": 26.0, "P1": -8.29, "P2.3": -6.12, "P5": -4.03, "P10": -2.05, "P16": -0.58, "P20": 0.18, "P25": 0.99, "P50": 4.17, "P75": 7.44, "P80": 8.29, "P84": 9.1, "P90": 10.7, "P95": 12.92, "P97.7": 15.35, "P99": 18.0}, {"week": 27.0, "P1": -8.23, "P2.3": -6.08, "P5": -4.01, "P10": -2.04, "P16": -0.57, "P20": 0.19, "P25": 1.0, "P50": 4.21, "P75": 7.5, "P80": 8.36, "P84": 9.18, "P90": 10.79, "P95": 13.03, "P97.7": 15.47, "P99": 18.13}, {"week": 28.0, "P1": -8.14, "P2.3": -6.03, "P5": -3.99, "P10": -2.04, "P16": -0.58, "P20": 0.17, "P25": 0.98, "P50": 4.18, "P75": 7.48, "P80": 8.34, "P84": 9.16, "P90": 10.77, "P95": 13.01, "P97.7": 15.45, "P99": 18.1}, {"week": 29.0, "P1": -8.01, "P2.3": -5.94, "P5": -3.93, "P10": -1.99, "P16": -0.55, "P20": 0.2, "P25": 1.01, "P50": 4.21, "P75": 7.51, "P80": 8.37, "P84": 9.19, "P90": 10.8, "P95": 13.04, "P97.7": 15.48, "P99": 18.12}, {"week": 30.0, "P1": -7.86, "P2.3": -5.82, "P5": -3.82, "P10": -1.89, "P16": -0.44, "P20": 0.31, "P25": 1.12, "P50": 4.33, "P75": 7.66, "P80": 8.53, "P84": 9.36, "P90": 10.99, "P95": 13.24, "P97.7": 15.69, "P99": 18.35}, {"week": 31.0, "P1": -7.69, "P2.3": -5.65, "P5": -3.65, "P10": -1.7, "P16": -0.24, "P20": 0.52, "P25": 1.34, "P50": 4.62, "P75": 8.01, "P80": 8.9, "P84": 9.74, "P90": 11.4, "P95": 13.7, "P97.7": 16.2, "P99": 18.9}, {"week": 32.0, "P1": -7.52, "P2.3": -5.45, "P5": -3.4, "P10": -1.41, "P16": 0.09, "P20": 0.88, "P25": 1.72, "P50": 5.11, "P75": 8.64, "P80": 9.56, "P84": 10.43, "P90": 12.16, "P95": 14.55, "P97.7": 17.14, "P99": 19.92}, {"week": 33.0, "P1": -7.32, "P2.3": -5.19, "P5": -3.07, "P10": -1.0, "P16": 0.57, "P20": 1.39, "P25": 2.28, "P50": 5.84, "P75": 9.56, "P80": 10.53, "P84": 11.46, "P90": 13.28, "P95": 15.8, "P97.7": 18.53, "P99": 21.46}, {"week": 34.0, "P1": -7.1, "P2.3": -4.9, "P5": -2.7, "P10": -0.54, "P16": 1.11, "P20": 1.98, "P25": 2.91, "P50": 6.68, "P75": 10.63, "P80": 11.66, "P84": 12.64, "P90": 14.58, "P95": 17.25, "P97.7": 20.15, "P99": 23.26}, {"week": 35.0, "P1": -6.9, "P2.3": -4.63, "P5": -2.35, "P10": -0.1, "P16": 1.63, "P20": 2.53, "P25": 3.52, "P50": 7.48, "P75": 11.65, "P80": 12.75, "P84": 13.79, "P90": 15.83, "P95": 18.66, "P97.7": 21.72, "P99": 25.0}, {"week": 36.0, "P1": -6.78, "P2.3": -4.46, "P5": -2.12, "P10": 0.21, "P16": 2.0, "P20": 2.94, "P25": 3.96, "P50": 8.09, "P75": 12.45, "P80": 13.6, "P84": 14.68, "P90": 16.83, "P95": 19.78, "P97.7": 22.98, "P99": 26.41}, {"week": 37.0, "P1": -6.74, "P2.3": -4.4, "P5": -2.03, "P10": 0.33, "P16": 2.16, "P20": 3.12, "P25": 4.16, "P50": 8.41, "P75": 12.89, "P80": 14.07, "P84": 15.19, "P90": 17.4, "P95": 20.44, "P97.7": 23.74, "P99": 27.26}, {"week": 38.0, "P1": -6.75, "P2.3": -4.42, "P5": -2.04, "P10": 0.34, "P16": 2.18, "P20": 3.15, "P25": 4.21, "P50": 8.52, "P75": 13.08, "P80": 14.29, "P84": 15.43, "P90": 17.68, "P95": 20.78, "P97.7": 24.12, "P99": 27.7}, {"week": 39.0, "P1": -6.76, "P2.3": -4.44, "P5": -2.07, "P10": 0.32, "P16": 2.17, "P20": 3.15, "P25": 4.22, "P50": 8.58, "P75": 13.21, "P80": 14.43, "P84": 15.58, "P90": 17.87, "P95": 21.01, "P97.7": 24.4, "P99": 28.02}, {"week": 40.0, "P1": -6.74, "P2.3": -4.42, "P5": -2.04, "P10": 0.36, "P16": 2.23, "P20": 3.22, "P25": 4.3, "P50": 8.73, "P75": 13.44, "P80": 14.68, "P84": 15.86, "P90": 18.18, "P95": 21.39, "P97.7": 24.83, "P99": 28.51}, {"week": 41.0, "P1": -6.6, "P2.3": -4.27, "P5": -1.86, "P10": 0.57, "P16": 2.48, "P20": 3.48, "P25": 4.59, "P50": 9.12, "P75": 13.95, "P80": 15.23, "P84": 16.43, "P90": 18.82, "P95": 22.1, "P97.7": 25.64, "P99": 29.4}, {"week": 42.0, "P1": -6.25, "P2.3": -3.88, "P5": -1.42, "P10": 1.08, "P16": 3.03, "P20": 4.07, "P25": 5.21, "P50": 9.89, "P75": 14.89, "P80": 16.22, "P84": 17.47, "P90": 19.94, "P95": 23.35, "P97.7": 27.01, "P99": 30.9}, {"week": 43.0, "P1": -5.63, "P2.3": -3.18, "P5": -0.63, "P10": 1.97, "P16": 4.01, "P20": 5.1, "P25": 6.29, "P50": 11.2, "P75": 16.45, "P80": 17.85, "P84": 19.16, "P90": 21.76, "P95": 25.34, "P97.7": 29.18, "P99": 33.27}, {"week": 44.0, "P1": -4.69, "P2.3": -2.11, "P5": 0.59, "P10": 3.34, "P16": 5.51, "P20": 6.67, "P25": 7.94, "P50": 13.18, "P75": 18.81, "P80": 20.3, "P84": 21.72, "P90": 24.5, "P95": 28.33, "P97.7": 32.45, "P99": 36.81}], "Obesity grade 3": [{"week": 0.0, "P1": -2.39, "P2.3": -2.01, "P5": -1.63, "P10": -1.25, "P16": -0.97, "P20": -0.82, "P25": -0.66, "P50": -0.02, "P75": 0.63, "P80": 0.79, "P84": 0.94, "P90": 1.23, "P95": 1.61, "P97.7": 1.99, "P99": 2.38}, {"week": 1.0, "P1": -3.53, "P2.3": -3.11, "P5": -2.69, "P10": -2.28, "P16": -1.97, "P20": -1.81, "P25": -1.64, "P50": -0.94, "P75": -0.25, "P80": -0.07, "P84": 0.09, "P90": 0.41, "P95": 0.82, "P97.7": 1.24, "P99": 1.67}, {"week": 2.0, "P1": -4.33, "P2.3": -3.86, "P5": -3.39, "P10": -2.93, "P16": -2.59, "P20": -2.41, "P25": -2.22, "P50": -1.45, "P75": -0.69, "P80": -0.49, "P84": -0.31, "P90": 0.04, "P95": 0.5, "P97.7": 0.97, "P99": 1.45}, {"week": 3.0, "P1": -4.87, "P2.3": -4.33, "P5": -3.8, "P10": -3.28, "P16": -2.89, "P20": -2.69, "P25": -2.47, "P50": -1.62, "P75": -0.76, "P80": -0.54, "P84": -0.33, "P90": 0.06, "P95": 0.58, "P97.7": 1.12, "P99": 1.67}, {"week": 4.0, "P1": -5.24, "P2.3": -4.61, "P5": -3.99, "P10": -3.4, "P16": -2.96, "P20": -2.73, "P25": -2.48, "P50": -1.51, "P75": -0.53, "P80": -0.28, "P84": -0.05, "P90": 0.39, "P95": 0.99, "P97.7": 1.61, "P99": 2.24}, {"week": 5.0, "P1": -5.5, "P2.3": -4.77, "P5": -4.05, "P10": -3.37, "P16": -2.85, "P20": -2.59, "P25": -2.31, "P50": -1.19, "P75": -0.08, "P80": 0.2, "P84": 0.47, "P90": 0.98, "P95": 1.66, "P97.7": 2.38, "P99": 3.12}, {"week": 6.0, "P1": -5.74, "P2.3": -4.87, "P5": -4.04, "P10": -3.24, "P16": -2.65, "P20": -2.35, "P25": -2.02, "P50": -0.75, "P75": 0.52, "P80": 0.84, "P84": 1.15, "P90": 1.74, "P95": 2.53, "P97.7": 3.36, "P99": 4.22}, {"week": 7.0, "P1": -6.0, "P2.3": -4.98, "P5": -4.01, "P10": -3.09, "P16": -2.42, "P20": -2.07, "P25": -1.7, "P50": -0.25, "P75": 1.2, "P80": 1.57, "P84": 1.91, "P90": 2.58, "P95": 3.49, "P97.7": 4.45, "P99": 5.45}, {"week": 8.0, "P1": -6.33, "P2.3": -5.15, "P5": -4.03, "P10": -2.98, "P16": -2.21, "P20": -1.81, "P25": -1.39, "P50": 0.24, "P75": 1.87, "P80": 2.29, "P84": 2.67, "P90": 3.43, "P95": 4.47, "P97.7": 5.56, "P99": 6.71}, {"week": 9.0, "P1": -6.77, "P2.3": -5.41, "P5": -4.13, "P10": -2.95, "P16": -2.08, "P20": -1.64, "P25": -1.17, "P50": 0.65, "P75": 2.46, "P80": 2.92, "P84": 3.36, "P90": 4.2, "P95": 5.36, "P97.7": 6.59, "P99": 7.9}, {"week": 10.0, "P1": -7.37, "P2.3": -5.82, "P5": -4.39, "P10": -3.07, "P16": -2.11, "P20": -1.62, "P25": -1.1, "P50": 0.9, "P75": 2.89, "P80": 3.4, "P84": 3.88, "P90": 4.81, "P95": 6.09, "P97.7": 7.45, "P99": 8.91}, {"week": 11.0, "P1": -8.15, "P2.3": -6.43, "P5": -4.84, "P10": -3.39, "P16": -2.34, "P20": -1.81, "P25": -1.24, "P50": 0.93, "P75": 3.08, "P80": 3.63, "P84": 4.15, "P90": 5.16, "P95": 6.55, "P97.7": 8.04, "P99": 9.64}, {"week": 12.0, "P1": -9.09, "P2.3": -7.22, "P5": -5.5, "P10": -3.94, "P16": -2.82, "P20": -2.25, "P25": -1.65, "P50": 0.66, "P75": 2.94, "P80": 3.52, "P84": 4.07, "P90": 5.15, "P95": 6.63, "P97.7": 8.23, "P99": 9.94}, {"week": 13.0, "P1": -10.02, "P2.3": -8.07, "P5": -6.28, "P10": -4.65, "P16": -3.49, "P20": -2.9, "P25": -2.28, "P50": 0.09, "P75": 2.43, "P80": 3.04, "P84": 3.6, "P90": 4.71, "P95": 6.23, "P97.7": 7.89, "P99": 9.67}, {"week": 14.0, "P1": -10.7, "P2.3": -8.72, "P5": -6.89, "P10": -5.24, "P16": -4.06, "P20": -3.47, "P25": -2.84, "P50": -0.46, "P75": 1.9, "P80": 2.5, "P84": 3.07, "P90": 4.18, "P95": 5.72, "P97.7": 7.39, "P99": 9.2}, {"week": 15.0, "P1": -11.02, "P2.3": -9.01, "P5": -7.17, "P10": -5.51, "P16": -4.32, "P20": -3.73, "P25": -3.1, "P50": -0.7, "P75": 1.65, "P80": 2.26, "P84": 2.83, "P90": 3.95, "P95": 5.49, "P97.7": 7.17, "P99": 8.99}, {"week": 16.0, "P1": -11.13, "P2.3": -9.1, "P5": -7.23, "P10": -5.55, "P16": -4.35, "P20": -3.75, "P25": -3.12, "P50": -0.71, "P75": 1.66, "P80": 2.27, "P84": 2.84, "P90": 3.97, "P95": 5.52, "P97.7": 7.21, "P99": 9.05}, {"week": 17.0, "P1": -11.27, "P2.3": -9.2, "P5": -7.29, "P10": -5.58, "P16": -4.35, "P20": -3.74, "P25": -3.1, "P50": -0.64, "P75": 1.77, "P80": 2.39, "P84": 2.98, "P90": 4.12, "P95": 5.71, "P97.7": 7.43, "P99": 9.31}, {"week": 18.0, "P1": -11.55, "P2.3": -9.43, "P5": -7.47, "P10": -5.7, "P16": -4.44, "P20": -3.8, "P25": -3.14, "P50": -0.6, "P75": 1.88, "P80": 2.52, "P84": 3.12, "P90": 4.31, "P95": 5.94, "P97.7": 7.72, "P99": 9.65}, {"week": 19.0, "P1": -11.8, "P2.3": -9.63, "P5": -7.62, "P10": -5.79, "P16": -4.49, "P20": -3.84, "P25": -3.16, "P50": -0.54, "P75": 2.02, "P80": 2.68, "P84": 3.3, "P90": 4.52, "P95": 6.2, "P97.7": 8.04, "P99": 10.02}, {"week": 20.0, "P1": -11.85, "P2.3": -9.64, "P5": -7.59, "P10": -5.73, "P16": -4.4, "P20": -3.73, "P25": -3.03, "P50": -0.35, "P75": 2.27, "P80": 2.95, "P84": 3.58, "P90": 4.83, "P95": 6.55, "P97.7": 8.43, "P99": 10.46}, {"week": 21.0, "P1": -11.62, "P2.3": -9.39, "P5": -7.32, "P10": -5.43, "P16": -4.08, "P20": -3.41, "P25": -2.69, "P50": 0.03, "P75": 2.71, "P80": 3.4, "P84": 4.05, "P90": 5.32, "P95": 7.08, "P97.7": 8.98, "P99": 11.05}, {"week": 22.0, "P1": -11.24, "P2.3": -8.98, "P5": -6.89, "P10": -4.97, "P16": -3.61, "P20": -2.92, "P25": -2.19, "P50": 0.58, "P75": 3.31, "P80": 4.02, "P84": 4.68, "P90": 5.97, "P95": 7.76, "P97.7": 9.7, "P99": 11.8}, {"week": 23.0, "P1": -10.83, "P2.3": -8.54, "P5": -6.41, "P10": -4.47, "P16": -3.08, "P20": -2.37, "P25": -1.63, "P50": 1.21, "P75": 4.01, "P80": 4.74, "P84": 5.41, "P90": 6.75, "P95": 8.58, "P97.7": 10.57, "P99": 12.72}, {"week": 24.0, "P1": -10.48, "P2.3": -8.15, "P5": -5.99, "P10": -4.0, "P16": -2.57, "P20": -1.85, "P25": -1.08, "P50": 1.85, "P75": 4.75, "P80": 5.5, "P84": 6.2, "P90": 7.57, "P95": 9.47, "P97.7": 11.52, "P99": 13.74}, {"week": 25.0, "P1": -10.25, "P2.3": -7.89, "P5": -5.67, "P10": -3.63, "P16": -2.16, "P20": -1.41, "P25": -0.62, "P50": 2.43, "P75": 5.45, "P80": 6.22, "P84": 6.95, "P90": 8.39, "P95": 10.36, "P97.7": 12.49, "P99": 14.78}, {"week": 26.0, "P1": -10.13, "P2.3": -7.73, "P5": -5.48, "P10": -3.39, "P16": -1.87, "P20": -1.1, "P25": -0.28, "P50": 2.87, "P75": 6.0, "P80": 6.81, "P84": 7.57, "P90": 9.06, "P95": 11.1, "P97.7": 13.31, "P99": 15.68}, {"week": 27.0, "P1": -10.04, "P2.3": -7.65, "P5": -5.38, "P10": -3.27, "P16": -1.74, "P20": -0.96, "P25": -0.12, "P50": 3.09, "P75": 6.31, "P80": 7.14, "P84": 7.91, "P90": 9.44, "P95": 11.54, "P97.7": 13.8, "P99": 16.22}, {"week": 28.0, "P1": -10.05, "P2.3": -7.69, "P5": -5.45, "P10": -3.35, "P16": -1.81, "P20": -1.02, "P25": -0.18, "P50": 3.07, "P75": 6.34, "P80": 7.18, "P84": 7.97, "P90": 9.52, "P95": 11.65, "P97.7": 13.94, "P99": 16.4}, {"week": 29.0, "P1": -10.22, "P2.3": -7.9, "P5": -5.67, "P10": -3.57, "P16": -2.03, "P20": -1.23, "P25": -0.39, "P50": 2.92, "P75": 6.24, "P80": 7.1, "P84": 7.91, "P90": 9.5, "P95": 11.67, "P97.7": 14.01, "P99": 16.51}, {"week": 30.0, "P1": -10.47, "P2.3": -8.18, "P5": -5.96, "P10": -3.84, "P16": -2.28, "P20": -1.47, "P25": -0.61, "P50": 2.77, "P75": 6.19, "P80": 7.08, "P84": 7.91, "P90": 9.55, "P95": 11.79, "P97.7": 14.2, "P99": 16.77}, {"week": 31.0, "P1": -10.64, "P2.3": -8.36, "P5": -6.14, "P10": -4.0, "P16": -2.41, "P20": -1.58, "P25": -0.7, "P50": 2.79, "P75": 6.33, "P80": 7.25, "P84": 8.12, "P90": 9.82, "P95": 12.15, "P97.7": 14.66, "P99": 17.33}, {"week": 32.0, "P1": -10.66, "P2.3": -8.38, "P5": -6.13, "P10": -3.95, "P16": -2.31, "P20": -1.46, "P25": -0.55, "P50": 3.08, "P75": 6.79, "P80": 7.76, "P84": 8.67, "P90": 10.46, "P95": 12.91, "P97.7": 15.55, "P99": 18.37}, {"week": 33.0, "P1": -10.61, "P2.3": -8.3, "P5": -6.0, "P10": -3.75, "P16": -2.04, "P20": -1.15, "P25": -0.19, "P50": 3.64, "P75": 7.6, "P80": 8.63, "P84": 9.6, "P90": 11.52, "P95": 14.15, "P97.7": 16.99, "P99": 20.01}, {"week": 34.0, "P1": -10.5, "P2.3": -8.14, "P5": -5.77, "P10": -3.41, "P16": -1.62, "P20": -0.68, "P25": 0.34, "P50": 4.44, "P75": 8.71, "P80": 9.83, "P84": 10.89, "P90": 12.97, "P95": 15.84, "P97.7": 18.93, "P99": 22.23}, {"week": 35.0, "P1": -10.22, "P2.3": -7.82, "P5": -5.37, "P10": -2.93, "P16": -1.04, "P20": -0.05, "P25": 1.03, "P50": 5.4, "P75": 10.0, "P80": 11.21, "P84": 12.36, "P90": 14.62, "P95": 17.73, "P97.7": 21.1, "P99": 24.7}, {"week": 36.0, "P1": -9.86, "P2.3": -7.45, "P5": -4.96, "P10": -2.45, "P16": -0.5, "P20": 0.53, "P25": 1.66, "P50": 6.26, "P75": 11.16, "P80": 12.45, "P84": 13.68, "P90": 16.11, "P95": 19.46, "P97.7": 23.1, "P99": 26.99}, {"week": 37.0, "P1": -9.58, "P2.3": -7.2, "P5": -4.73, "P10": -2.2, "P16": -0.22, "P20": 0.83, "P25": 1.98, "P50": 6.73, "P75": 11.84, "P80": 13.2, "P84": 14.49, "P90": 17.04, "P95": 20.58, "P97.7": 24.43, "P99": 28.56}, {"week": 38.0, "P1": -9.36, "P2.3": -7.09, "P5": -4.69, "P10": -2.23, "P16": -0.28, "P20": 0.75, "P25": 1.9, "P50": 6.64, "P75": 11.8, "P80": 13.18, "P84": 14.49, "P90": 17.1, "P95": 20.72, "P97.7": 24.66, "P99": 28.9}, {"week": 39.0, "P1": -8.98, "P2.3": -6.84, "P5": -4.58, "P10": -2.23, "P16": -0.37, "P20": 0.63, "P25": 1.73, "P50": 6.33, "P75": 11.38, "P80": 12.74, "P84": 14.03, "P90": 16.59, "P95": 20.17, "P97.7": 24.08, "P99": 28.29}, {"week": 40.0, "P1": -8.26, "P2.3": -6.25, "P5": -4.12, "P10": -1.9, "P16": -0.14, "P20": 0.81, "P25": 1.86, "P50": 6.27, "P75": 11.13, "P80": 12.44, "P84": 13.68, "P90": 16.17, "P95": 19.64, "P97.7": 23.43, "P99": 27.52}, {"week": 41.0, "P1": -7.12, "P2.3": -5.19, "P5": -3.14, "P10": -1.01, "P16": 0.7, "P20": 1.62, "P25": 2.63, "P50": 6.91, "P75": 11.65, "P80": 12.93, "P84": 14.15, "P90": 16.58, "P95": 19.97, "P97.7": 23.69, "P99": 27.7}, {"week": 42.0, "P1": -5.34, "P2.3": -3.41, "P5": -1.37, "P10": 0.77, "P16": 2.48, "P20": 3.4, "P25": 4.42, "P50": 8.72, "P75": 13.51, "P80": 14.8, "P84": 16.03, "P90": 18.49, "P95": 21.93, "P97.7": 25.69, "P99": 29.76}, {"week": 43.0, "P1": -2.63, "P2.3": -0.61, "P5": 1.54, "P10": 3.78, "P16": 5.58, "P20": 6.55, "P25": 7.63, "P50": 12.18, "P75": 17.24, "P80": 18.61, "P84": 19.92, "P90": 22.52, "P95": 26.17, "P97.7": 30.16, "P99": 34.47}, {"week": 44.0, "P1": 1.41, "P2.3": 3.63, "P5": 5.99, "P10": 8.46, "P16": 10.45, "P20": 11.52, "P25": 12.71, "P50": 17.73, "P75": 23.34, "P80": 24.86, "P84": 26.31, "P90": 29.2, "P95": 33.24, "P97.7": 37.65, "P99": 42.42}]};
+
+// ── State ──
+let debounceTimer    = null;
+let measurementIdCounter = 0;
+let chartMode = "absolute"; // "absolute" | "gain"
+let unitMode  = "kg";       // "kg" | "lbs"
+
+const KG_TO_LBS = 2.20462;
+function toDisplay(kg) { return unitMode === "lbs" ? kg * KG_TO_LBS : kg; }
+function toKg(val)     { return unitMode === "lbs" ? val / KG_TO_LBS : val; }
+function unitLabel()   { return unitMode === "lbs" ? "lbs" : "kg"; }
+
+// ── BMI helpers (always in kg/cm) ──
+function calcBmi(h, w) { return w / ((h/100)**2); }
+
+function bmiGroup(bmi) {
+  if (!isFinite(bmi) || bmi <= 0) return null;
+  if (bmi < 18.5) return "Underweight";
+  if (bmi < 25)   return "Normal weight";
+  if (bmi < 30)   return "Overweight";
+  if (bmi < 35)   return "Obesity grade 1";
+  if (bmi < 40)   return "Obesity grade 2";
+  return "Obesity grade 3";
+}
+
+function closestRow(groupData, week) {
+  return groupData.reduce((best, row) =>
+    Math.abs(row.week - week) < Math.abs(best.week - week) ? row : best);
+}
+
+function estimatePercentile(row, gainKg) {
+  const keys = ["P1","P2.3","P5","P10","P16","P20","P25","P50","P75","P80","P84","P90","P95","P97.7","P99"];
+  const pts = keys.map(k => ({ p: parseFloat(k.slice(1)), v: row[k] }))
+    .filter(x => isFinite(x.p) && isFinite(x.v)).sort((a,b) => a.v - b.v);
+  if (!pts.length || !isFinite(gainKg)) return null;
+  if (gainKg <= pts[0].v)               return pts[0].p;
+  if (gainKg >= pts[pts.length-1].v)    return pts[pts.length-1].p;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i+1];
+    if (gainKg >= a.v && gainKg <= b.v) {
+      const t = Math.abs(b.v - a.v) < 1e-12 ? 0 : (gainKg - a.v) / (b.v - a.v);
+      return a.p + t * (b.p - a.p);
+    }
+  }
+  return null;
+}
+
+function pctLabel(pct) {
+  if (pct == null) return "";
+  if (pct < 10)   return "below typical range";
+  if (pct > 90)   return "above typical range";
+  return "within typical range";
+}
+
+// ── Due-date → gestational week ──
+function weeksFromDueDate(dueDateStr) {
+  if (!dueDateStr) return null;
+  const due   = new Date(dueDateStr);
+  const today = new Date();
+  if (isNaN(due.getTime())) return null;
+  // LMP ≈ due date − 280 days
+  const lmp     = new Date(due.getTime() - 280 * 86400000);
+  const diffMs  = today.getTime() - lmp.getTime();
+  const weeks   = diffMs / (7 * 86400000);
+  return (weeks >= 0 && weeks <= 44) ? Math.round(weeks * 10) / 10 : null;
+}
+
+// ── Chart rendering ──
+function renderChart(groupData, baseWKg, currentPt, measurements) {
+  const isGain = chartMode === "gain";
+  // centile data is always in kg; convert for display
+  const cv = v => toDisplay(v); // convert kg value to display unit
+
+  const weeks = groupData.map(d => d.week);
+
+  // reference curves in display units
+  const refOffset = isGain ? 0 : baseWKg;
+  const p10  = groupData.map(d => cv(refOffset + d.P10));
+  const p25  = groupData.map(d => cv(refOffset + d.P25));
+  const p50  = groupData.map(d => cv(refOffset + d.P50));
+  const p75  = groupData.map(d => cv(refOffset + d.P75));
+  const p90  = groupData.map(d => cv(refOffset + d.P90));
+
+  const ROSE       = "#e8637a";
+  const ROSE_OUTER = "rgba(232,99,122,0.13)";
+  const ROSE_INNER = "rgba(232,99,122,0.25)";
+  const TEAL       = "#5b8c7a";
+  const TEAL_LIGHT = "rgba(91,140,122,0.5)";
+  const GREY       = "#8a8a9a";
+  const TRIM_BG    = "rgba(26,26,46,0.035)";
+
+  const ul = unitLabel();
+
+  // hover text for bands: show P10–P90 gain range at each week
+  const bandHover = groupData.map((d, i) => {
+    const lo = cv(d.P10), hi = cv(d.P90), med = cv(d.P50);
+    return `<b>Week ${d.week}</b><br>Gain range (P10–P90): ${lo.toFixed(1)}–${hi.toFixed(1)} ${ul}<br>Median gain: ${med.toFixed(1)} ${ul}`;
+  });
+
+  const shapes = [
+    { type:"rect", x0:1,  x1:13, yref:"paper", y0:0, y1:1, fillcolor:TRIM_BG, line:{width:0}, layer:"below" },
+    { type:"rect", x0:28, x1:40, yref:"paper", y0:0, y1:1, fillcolor:TRIM_BG, line:{width:0}, layer:"below" },
+  ];
+  const annotations = [
+    { x:7,  yref:"paper", y:1.03, text:"T1", showarrow:false, font:{size:10,color:"#b0b0c4"}, xanchor:"center" },
+    { x:20, yref:"paper", y:1.03, text:"T2", showarrow:false, font:{size:10,color:"#b0b0c4"}, xanchor:"center" },
+    { x:34, yref:"paper", y:1.03, text:"T3", showarrow:false, font:{size:10,color:"#b0b0c4"}, xanchor:"center" },
+  ];
+
+  const traces = [
+    // outer band — hoverable
+    {
+      x:weeks, y:p90, mode:"lines", line:{width:0},
+      hoverinfo:"skip", showlegend:false, name:"_p90"
+    },
+    {
+      x:weeks, y:p10, mode:"lines", line:{width:0},
+      fill:"tonexty", fillcolor:ROSE_OUTER, name:"P10–P90",
+      customdata: bandHover,
+      hovertemplate:"%{customdata}<extra>Reference range</extra>"
+    },
+    // inner band — hoverable
+    {
+      x:weeks, y:p75, mode:"lines", line:{width:0},
+      hoverinfo:"skip", showlegend:false, name:"_p75"
+    },
+    {
+      x:weeks, y:p25, mode:"lines", line:{width:0},
+      fill:"tonexty", fillcolor:ROSE_INNER, name:"P25–P75",
+      customdata: bandHover,
+      hovertemplate:"%{customdata}<extra>Reference range</extra>"
+    },
+    // median
+    {
+      x:weeks, y:p50, mode:"lines", name:"Median (P50)",
+      line:{ width:2.5, color:ROSE },
+      customdata: groupData.map(d => cv(d.P50)),
+      hovertemplate:`<b>Week %{x}</b><br>Median gain: %{customdata:.1f} ${ul}<extra>Median</extra>`
+    }
+  ];
+
+  // user trajectory
+  const allPts = [{ week:0, weightKg:baseWKg }]
+    .concat(measurements)
+    .concat(currentPt ? [currentPt] : [])
+    .sort((a,b) => a.week - b.week);
+
+  if (allPts.length >= 2) {
+    traces.push({
+      x: allPts.map(m => m.week),
+      y: allPts.map(m => cv(isGain ? m.weightKg - baseWKg : m.weightKg)),
+      mode:"lines", name:"Your path",
+      line:{ width:2.5, color:TEAL_LIGHT },
+      hoverinfo:"skip", showlegend:true
+    });
+  }
+
+  // start point
+  traces.push({
+    x:[0], y:[cv(isGain ? 0 : baseWKg)],
+    mode:"markers", name:"Pre-pregnancy",
+    marker:{ size:9, color:GREY, symbol:"circle" },
+    hovertemplate: isGain
+      ? `<b>Week 0</b><br>Starting point<extra>Pre-pregnancy</extra>`
+      : `<b>Week 0</b><br>Pre-pregnancy weight: ${cv(baseWKg).toFixed(1)} ${ul}<extra>Pre-pregnancy</extra>`
+  });
+
+  // past measurements
+  if (measurements.length) {
+    const cd = measurements.map(m => {
+      const gainKg = m.weightKg - baseWKg;
+      const row    = closestRow(groupData, m.week);
+      const pct    = estimatePercentile(row, gainKg);
+      return [cv(gainKg), pct, pctLabel(pct)];
+    });
+    traces.push({
+      x: measurements.map(m => m.week),
+      y: measurements.map(m => cv(isGain ? m.weightKg - baseWKg : m.weightKg)),
+      mode:"markers", name:"Past weigh-ins",
+      marker:{ size:9, color:TEAL, symbol:"circle" },
+      customdata: cd,
+      hovertemplate:`<b>Week %{x}</b><br>Gained: %{customdata[0]:.1f} ${ul}<br>Percentile: %{customdata[1]:.1f} · %{customdata[2]}<extra>Past</extra>`
+    });
+  }
+
+  // current point
+  if (currentPt) {
+    const gainKg = currentPt.weightKg - baseWKg;
+    const row    = closestRow(groupData, currentPt.week);
+    const pct    = estimatePercentile(row, gainKg);
+    traces.push({
+      x:[currentPt.week], y:[cv(isGain ? gainKg : currentPt.weightKg)],
+      mode:"markers", name:"Today",
+      marker:{ size:14, color:"white", line:{width:2.5, color:TEAL}, symbol:"circle" },
+      customdata:[[cv(gainKg), pct, pctLabel(pct)]],
+      hovertemplate:`<b>Week %{x}</b><br>Gained: %{customdata[0]:.1f} ${ul}<br>Percentile: %{customdata[1]:.1f} · %{customdata[2]}<extra>Today</extra>`
+    });
+  }
+
+  const yTitle = isGain
+    ? `Weight gain above baseline (${ul})`
+    : `Your weight (${ul})`;
+
+  const pal = chartPalette();
+  const layout = {
+    margin:{ l:68, r:16, t:26, b:52 },
+    paper_bgcolor:"rgba(0,0,0,0)",
+    plot_bgcolor:"rgba(0,0,0,0)",
+    shapes, annotations,
+    xaxis:{
+      title:{ text:"Gestational age (weeks)", font:{size:12,color:pal.label} },
+      range:[0,44], gridcolor:pal.grid, zeroline:false,
+      tickfont:{size:11,color:pal.tick}
+    },
+    yaxis:{
+      title:{ text:yTitle, font:{size:12,color:pal.label} },
+      gridcolor:pal.grid,
+      zeroline: isGain, zerolinecolor:pal.zeroline, zerolinewidth:1,
+      tickfont:{size:11,color:pal.tick}
+    },
+    legend:{ orientation:"h", y:1.11, x:0, bgcolor:"rgba(0,0,0,0)", font:{size:11,color:pal.legend} },
+    hovermode:"closest",
+    hoverlabel:{ bgcolor: isDark() ? "#1e1e2e" : "white", bordercolor:"rgba(128,128,180,0.2)", font:{size:12,color: isDark() ? "#eeeef5" : "#1a1a2e"}, namelength:-1 }
+  };
+
+  // Use Plotly.react for smooth animated transitions between states
+  const chartEl = document.getElementById("chart");
+  if (chartEl.data) {
+    Plotly.react("chart", traces, layout, { responsive:true, displaylogo:false, displayModeBar:false });
+  } else {
+    Plotly.newPlot("chart", traces, layout, { responsive:true, displaylogo:false, displayModeBar:false });
+  }
+}
+
+// ── Dark mode: detect system preference for chart colours ──
+function isDark() {
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+function chartPalette() {
+  return isDark()
+    ? { grid:"rgba(255,255,255,0.06)", tick:"#6e6e88", label:"#6e6e88", zeroline:"rgba(255,255,255,0.1)", legend:"#a8a8c0" }
+    : { grid:"rgba(26,26,46,0.05)",    tick:"#9494b0", label:"#9494b0", zeroline:"rgba(26,26,46,0.15)",  legend:"#5c5c7a" };
+}
+
+// ── Unit switching: update input values & labels ──
+function applyUnit(newUnit) {
+  const prev = unitMode;
+  unitMode   = newUnit;
+  const ul   = unitLabel();
+
+  // update field unit labels
+  document.getElementById("weightUnit").textContent       = ul;
+  document.getElementById("currentWeightUnit").textContent = ul;
+  document.getElementById("measWeightHeader").textContent  = `Weight (${ul})`;
+  document.getElementById("snapGainLbl").textContent        = `${ul} gained`;
+
+  // convert stored input values
+  const convert = prev === "kg"
+    ? v => (v * KG_TO_LBS)
+    : v => (v / KG_TO_LBS);
+
+  ["prePregWeightKg","currentWeightKg"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.value !== "") el.value = convert(parseFloat(el.value)).toFixed(1);
+  });
+
+  // convert all measurement rows
+  document.querySelectorAll(".meas-weight").forEach(el => {
+    if (el.value !== "") el.value = convert(parseFloat(el.value)).toFixed(1);
+  });
+
+  // update height unit label (always cm for simplicity — could add ft/in later)
+  // update slider range labels for weight
+  const slLabels = document.getElementById("weightSliderLabels");
+  if (unitMode === "lbs") {
+    slLabels.innerHTML = "<span>88</span><span>330</span>";
+    const sl = document.getElementById("weightSlider");
+    sl.min = 88; sl.max = 330; sl.step = 1;
+  } else {
+    slLabels.innerHTML = "<span>40</span><span>150</span>";
+    const sl = document.getElementById("weightSlider");
+    sl.min = 40; sl.max = 150; sl.step = 0.5;
+  }
+}
+
+// ── localStorage ──
+function saveState() {
+  try {
+    localStorage.setItem("gwc_state", JSON.stringify({
+      h:   document.getElementById("heightCm").value,
+      w:   document.getElementById("prePregWeightKg").value,
+      cWk: document.getElementById("currentWeek").value,
+      cWt: document.getElementById("currentWeightKg").value,
+      dd:  document.getElementById("dueDate").value,
+      measurements: getMeasurementsRaw(),
+      mode: chartMode,
+      unit: unitMode
+    }));
+  } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem("gwc_state");
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    // restore unit first so inputs go in right units
+    if (s.unit && s.unit !== unitMode) {
+      unitMode = s.unit;
+      document.getElementById("unitKg") .classList.toggle("active", unitMode === "kg");
+      document.getElementById("unitLbs").classList.toggle("active", unitMode === "lbs");
+      // update labels without converting (values already stored in saved unit)
+      const ul = unitLabel();
+      document.getElementById("weightUnit").textContent        = ul;
+      document.getElementById("currentWeightUnit").textContent = ul;
+      document.getElementById("measWeightHeader").textContent  = `Weight (${ul})`;
+      document.getElementById("snapGainLbl").textContent       = `${ul} gained`;
+    }
+    if (s.h)   document.getElementById("heightCm").value       = s.h;
+    if (s.w)   document.getElementById("prePregWeightKg").value = s.w;
+    if (s.cWk) document.getElementById("currentWeek").value    = s.cWk;
+    if (s.cWt) document.getElementById("currentWeightKg").value = s.cWt;
+    if (s.dd)  document.getElementById("dueDate").value         = s.dd;
+    if (s.measurements) s.measurements.forEach(m => addMeasurementRow(m.week, m.weight));
+    if (s.mode) {
+      chartMode = s.mode;
+      document.getElementById("modeAbsolute").classList.toggle("active", chartMode === "absolute");
+      document.getElementById("modeGain")    .classList.toggle("active", chartMode === "gain");
+    }
+    syncSlidersFromInputs();
+    updateDueDateComputed();
+  } catch(e) {}
+}
+
+// ── Slider fill ──
+function updateSliderFill(slider) {
+  const min = parseFloat(slider.min), max = parseFloat(slider.max), val = parseFloat(slider.value);
+  slider.style.setProperty("--pct", ((val-min)/(max-min)*100).toFixed(1)+"%");
+}
+function syncSlidersFromInputs() {
+  ["heightCm","prePregWeightKg"].forEach(id => {
+    const inp = document.getElementById(id);
+    const sl  = document.getElementById(id === "heightCm" ? "heightSlider" : "weightSlider");
+    if (sl) { sl.value = inp.value; updateSliderFill(sl); }
+  });
+}
+
+// ── Inputs ──
+function getInputsKg() {
+  // always return in kg internally
+  const h   = parseFloat(document.getElementById("heightCm").value);
+  const wRaw = parseFloat(document.getElementById("prePregWeightKg").value);
+  const w   = isFinite(wRaw) ? toKg(wRaw) : NaN;
+  const cWk = parseFloat(document.getElementById("currentWeek").value)    || NaN;
+  const cWtRaw = parseFloat(document.getElementById("currentWeightKg").value);
+  const cWt = isFinite(cWtRaw) ? toKg(cWtRaw) : NaN;
+  return { h, w, cWk, cWt };
+}
+
+function getMeasurementsRaw() {
+  // returns {week, weight} in current display unit (for storage)
+  return [...document.querySelectorAll(".meas-row")].map(row => ({
+    week:   parseFloat(row.querySelector(".meas-week").value),
+    weight: parseFloat(row.querySelector(".meas-weight").value)
+  })).filter(m => isFinite(m.week) && isFinite(m.weight));
+}
+
+function getMeasurementsKg() {
+  return getMeasurementsRaw()
+    .map(m => ({ week: m.week, weightKg: toKg(m.weight) }))
+    .sort((a,b) => a.week - b.week);
+}
+
+// ── Due date computed display ──
+function updateDueDateComputed() {
+  const dd  = document.getElementById("dueDate").value;
+  const wks = weeksFromDueDate(dd);
+  const el  = document.getElementById("weekComputed");
+  const val = document.getElementById("weekComputedVal");
+  if (wks !== null) {
+    val.textContent = wks.toFixed(1);
+    el.classList.add("visible");
+    // auto-fill the gestational week field
+    document.getElementById("currentWeek").value = wks.toFixed(1);
+  } else {
+    el.classList.remove("visible");
+  }
+}
+
+// ── Main update ──
+function update() {
+  const { h, w, cWk, cWt } = getInputsKg();
+  const valid = isFinite(h) && isFinite(w) && h>=120 && h<=220 && w>=35 && w<=200;
+
+  document.getElementById("chartEmpty").classList.toggle("hidden", valid);
+  if (!valid) return;
+
+  const group     = bmiGroup(calcBmi(h, w));
+  const groupData = CENTILES[group];
+  if (!groupData) return;
+
+  const measurements = getMeasurementsKg();
+  const hasCurrent   = isFinite(cWk) && isFinite(cWt);
+  const currentPt    = hasCurrent ? { week:cWk, weightKg:cWt } : null;
+  const filteredMeas = currentPt
+    ? measurements.filter(m => !(Math.abs(m.week-cWk)<1e-9 && Math.abs(m.weightKg-cWt)<1e-9))
+    : measurements;
+
+  renderChart(groupData, w, currentPt, filteredMeas);
+
+  // count badge
+  const total = filteredMeas.length + (currentPt ? 1 : 0);
+  const badge = document.getElementById("measCountBadge");
+  badge.textContent = total + " weigh-in" + (total !== 1 ? "s" : "") + " logged";
+  badge.classList.toggle("hidden", total === 0);
+
+  // snapshot
+  const sumEl = document.getElementById("currentSummary");
+  if (currentPt) {
+    const gainKg = cWt - w;
+    const row    = closestRow(groupData, cWk);
+    const pct    = estimatePercentile(row, gainKg);
+    const gainDisp = toDisplay(gainKg);
+    document.getElementById("snapGain").textContent     = (gainDisp >= 0 ? "+" : "") + gainDisp.toFixed(1);
+    document.getElementById("snapPct").textContent      = pct != null ? Math.round(pct) + "th" : "—";
+    document.getElementById("snapPctLabel").textContent = pctLabel(pct);
+    sumEl.classList.add("visible");
+  } else {
+    sumEl.classList.remove("visible");
+  }
+
+  saveState();
+}
+
+function debounced() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(update, 220);
+}
+
+// ── Sliders ──
+function syncSlider(inputId, sliderId) {
+  const inp = document.getElementById(inputId);
+  const sl  = document.getElementById(sliderId);
+  inp.addEventListener("input", () => { sl.value = inp.value; updateSliderFill(sl); debounced(); });
+  sl.addEventListener("input",  () => { inp.value = sl.value; updateSliderFill(sl); debounced(); });
+  updateSliderFill(sl);
+}
+
+// ── Measurement rows ──
+function addMeasurementRow(week="", weight="") {
+  const rows = document.getElementById("measurementRows");
+  const row  = document.createElement("div");
+  row.className = "meas-row";
+  row.dataset.id = measurementIdCounter++;
+  row.innerHTML = `
+    <input type="number" class="meas-week"   min="0" max="44"   step="0.5" placeholder="e.g. 20" value="${week}">
+    <input type="number" class="meas-weight" min="30" max="550" step="0.1" placeholder="e.g. 63"  value="${weight}">
+    <button type="button" class="btn-remove" aria-label="Remove">×</button>
+  `;
+  row.querySelectorAll("input").forEach(i => i.addEventListener("input", debounced));
+  row.querySelector(".btn-remove").addEventListener("click", () => { row.remove(); update(); });
+  rows.appendChild(row);
+}
+
+function clearMeasurements() {
+  document.getElementById("measurementRows").innerHTML = "";
+}
+
+// ── URL share encode / decode ──
+function buildShareURL() {
+  const { h, w, cWk, cWt } = getInputsKg();
+  const measurements = getMeasurementsKg();
+  const params = new URLSearchParams();
+  if (isFinite(h))   params.set("h",    h.toFixed(1));
+  if (isFinite(w))   params.set("w",    w.toFixed(1));
+  if (isFinite(cWk)) params.set("wk",   cWk.toFixed(1));
+  if (isFinite(cWt)) params.set("cw",   cWt.toFixed(1));
+  const dd = document.getElementById("dueDate").value;
+  if (dd) params.set("dd", dd);
+  if (measurements.length) {
+    // encode as "week:kg,week:kg"
+    params.set("m", measurements.map(m => `${m.week}:${m.weightKg.toFixed(1)}`).join(","));
+  }
+  if (chartMode !== "absolute") params.set("mode", chartMode);
+  if (unitMode  !== "kg")       params.set("unit", unitMode);
+  return `${location.origin}${location.pathname}?${params.toString()}`;
+}
+
+function loadFromURL() {
+  const params = new URLSearchParams(location.search);
+  if (!params.has("h") && !params.has("w")) return; // nothing encoded
+
+  const hKg  = parseFloat(params.get("h"));
+  const wKg  = parseFloat(params.get("w"));
+  const wk   = parseFloat(params.get("wk"));
+  const cwKg = parseFloat(params.get("cw"));
+  const dd   = params.get("dd") || "";
+  const mode = params.get("mode") || "absolute";
+  const unit = params.get("unit") || "kg";
+  const mStr = params.get("m") || "";
+
+  // apply unit first
+  if (unit !== unitMode) {
+    unitMode = unit;
+    document.getElementById("unitKg") .classList.toggle("active", unitMode === "kg");
+    document.getElementById("unitLbs").classList.toggle("active", unitMode === "lbs");
+    const ul = unitLabel();
+    document.getElementById("weightUnit").textContent        = ul;
+    document.getElementById("currentWeightUnit").textContent = ul;
+    document.getElementById("measWeightHeader").textContent  = `Weight (${ul})`;
+    document.getElementById("snapGainLbl").textContent       = `${ul} gained`;
+  }
+
+  if (isFinite(hKg)) document.getElementById("heightCm").value        = toDisplay(hKg).toFixed(1);
+  if (isFinite(wKg)) document.getElementById("prePregWeightKg").value  = toDisplay(wKg).toFixed(1);
+  if (isFinite(wk))  document.getElementById("currentWeek").value      = wk.toFixed(1);
+  if (isFinite(cwKg))document.getElementById("currentWeightKg").value  = toDisplay(cwKg).toFixed(1);
+  if (dd) {
+    document.getElementById("dueDate").value = dd;
+    updateDueDateComputed();
+  }
+  if (mStr) {
+    mStr.split(",").forEach(pair => {
+      const [wkStr, kgStr] = pair.split(":");
+      const wk  = parseFloat(wkStr);
+      const kgV = parseFloat(kgStr);
+      if (isFinite(wk) && isFinite(kgV)) addMeasurementRow(wk, toDisplay(kgV).toFixed(1));
+    });
+  }
+  if (mode !== "absolute") {
+    chartMode = mode;
+    document.getElementById("modeAbsolute").classList.remove("active");
+    document.getElementById("modeGain")    .classList.add("active");
+  }
+  syncSlidersFromInputs();
+}
+
+function showToast(msg) {
+  const toast = document.getElementById("shareToast");
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2800);
+}
+
+// ── Init ──
+function init() {
+  syncSlider("heightCm",       "heightSlider");
+  syncSlider("prePregWeightKg","weightSlider");
+
+  ["currentWeek","currentWeightKg"].forEach(id =>
+    document.getElementById(id).addEventListener("input", debounced));
+
+  // due date
+  document.getElementById("dueDate").addEventListener("change", () => {
+    updateDueDateComputed();
+    debounced();
+  });
+
+  // chart mode toggle
+  document.getElementById("modeAbsolute").addEventListener("click", () => {
+    chartMode = "absolute";
+    document.getElementById("modeAbsolute").classList.add("active");
+    document.getElementById("modeGain")    .classList.remove("active");
+    update();
+  });
+  document.getElementById("modeGain").addEventListener("click", () => {
+    chartMode = "gain";
+    document.getElementById("modeGain")    .classList.add("active");
+    document.getElementById("modeAbsolute").classList.remove("active");
+    update();
+  });
+
+  // unit toggle
+  document.getElementById("unitKg").addEventListener("click", () => {
+    if (unitMode === "kg") return;
+    applyUnit("kg");
+    document.getElementById("unitKg") .classList.add("active");
+    document.getElementById("unitLbs").classList.remove("active");
+    debounced();
+  });
+  document.getElementById("unitLbs").addEventListener("click", () => {
+    if (unitMode === "lbs") return;
+    applyUnit("lbs");
+    document.getElementById("unitLbs").classList.add("active");
+    document.getElementById("unitKg") .classList.remove("active");
+    debounced();
+  });
+
+  // export
+  document.getElementById("exportBtn").addEventListener("click", () => {
+    Plotly.relayout("chart", { paper_bgcolor:"#ffffff", plot_bgcolor:"#ffffff" });
+    Plotly.downloadImage("chart", {
+      format:"png", width:1400, height:700, scale:2,
+      filename:"gestational-weight-chart"
+    }).finally(() => {
+      Plotly.relayout("chart", { paper_bgcolor:"rgba(0,0,0,0)", plot_bgcolor:"rgba(0,0,0,0)" });
+    });
+  });
+
+  // share button
+  document.getElementById("shareBtn").addEventListener("click", () => {
+    const url = buildShareURL();
+    navigator.clipboard.writeText(url).then(() => {
+      showToast("Link copied to clipboard ✓");
+    }).catch(() => {
+      // fallback: show the URL in prompt
+      prompt("Copy this link:", url);
+    });
+  });
+
+  // measurements
+  document.getElementById("addMeasurementBtn").addEventListener("click", () => addMeasurementRow());
+
+  document.getElementById("sampleBtn").addEventListener("click", () => {
+    // sample data in kg; convert if needed
+    const base = 60;
+    document.getElementById("prePregWeightKg").value = toDisplay(base).toFixed(1);
+    document.getElementById("currentWeek").value     = "28";
+    document.getElementById("currentWeightKg").value = toDisplay(68).toFixed(1);
+    clearMeasurements();
+    [[12,61.2],[20,64.0],[28,68.0]].forEach(([w,kg]) => addMeasurementRow(w, toDisplay(kg).toFixed(1)));
+    syncSlidersFromInputs();
+    update();
+  });
+
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    document.getElementById("currentWeek").value      = "";
+    document.getElementById("currentWeightKg").value  = "";
+    document.getElementById("dueDate").value           = "";
+    document.getElementById("weekComputed").classList.remove("visible");
+    clearMeasurements();
+    try { localStorage.removeItem("gwc_state"); } catch(e) {}
+    update();
+  });
+
+  // URL params take priority over localStorage
+  loadFromURL();
+  loadState();
+
+  // Re-render chart if system colour scheme changes
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", update);
+
+  update();
+}
+
+init();
+</script>
+</body>
+</html>
