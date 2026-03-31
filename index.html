@@ -54,8 +54,8 @@
   .toggle-wrap  { background: #0e0e1a; }
   .unit-toggle  { background: #0e0e1a; }
   .toggle-btn.active { background: #2a2a3e; }
-  input[type="number"], input[type="date"], input[type="text"] { background: #17172a; color: var(--ink); border-color: var(--border); }
-  input[type="number"]:focus, input[type="date"]:focus, input[type="text"]:focus { background: #1e1e32; }
+  input[type="number"], input[type="date"] { background: #17172a; color: var(--ink); border-color: var(--border); }
+  input[type="number"]:focus, input[type="date"]:focus { background: #1e1e32; }
   .pill { background: #1a1a2e; }
   .btn-ghost { border-color: var(--border); }
   .btn-ghost:hover { background: #2a2a3e; }
@@ -220,7 +220,7 @@ h1 em { font-style: italic; color: var(--rose); }
 .field-input-wrap { position: relative; }
 .field-unit { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 0.83rem; color: var(--ink-muted); pointer-events: none; font-weight: 500; }
 
-input[type="number"], input[type="date"], input[type="text"] {
+input[type="number"], input[type="date"] {
   width: 100%; border: 1.5px solid var(--border); border-radius: var(--r-sm);
   padding: 11px 14px; font-family: inherit; font-size: 0.97rem;
   color: var(--ink); background: #fafafa;
@@ -230,7 +230,7 @@ input[type="number"], input[type="date"], input[type="text"] {
 input[type="number"] { padding-right: 40px; }
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
-input[type="number"]:focus, input[type="date"]:focus, input[type="text"]:focus {
+input[type="number"]:focus, input[type="date"]:focus {
   outline: none; border-color: var(--rose); background: var(--white);
   box-shadow: 0 0 0 3px rgba(232,99,122,0.12);
 }
@@ -292,7 +292,7 @@ input[type="range"]::-moz-range-thumb {
 }
 @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
 .meas-row input { padding: 9px 12px; font-size: 0.9rem; }
-.meas-row .meas-date { font-size: 0.82rem; padding: 9px 8px; color: var(--ink-soft); letter-spacing: 0.02em; }
+.meas-row .meas-date { font-size: 0.82rem; padding: 9px 6px; }
 .btn-remove {
   width: 36px; height: 36px; border: 1.5px solid var(--border); border-radius: 9px;
   background: #fafafa; cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -563,12 +563,12 @@ input[type="range"]::-moz-range-thumb {
     <details>
       <summary>About this tool</summary>
       <div class="about-body">
-        <p>This tool was born out of frustration with pregnancy weight charts that show little more than two straight lines at different angles — a blunt instrument for something that deserves more nuance. The reference curves here reflect how weight actually changes during pregnancy: non-linearly, differently across BMI groups, and with real variation around the median.</p>
-        <p>This chart uses week-specific centile tables for six pre-pregnancy BMI groups, derived from a large international study of 218,216 pregnant women across 33 cohorts in Europe, North America, and Oceania. The reference population is predominantly of European/North American/Oceanian background — curves may be less representative for women from other ethnic backgrounds.</p>
+        <p>This chart uses week-specific centile tables for six pre-pregnancy BMI groups, derived from a large international study of 218,216 pregnant women across 33 cohorts in Europe, North America, and Oceania. The reference population is predominantly of European/North American/Oceanian background; curves may be less representative for women from other ethnic backgrounds.</p>
         <p>Bands show the P10–P90 (lighter) and P25–P75 (darker) reference intervals. The median (P50) is the solid line. Hovering over the bands shows the reference gain range at that week. Trimester boundaries appear as light grey bands. Your personal data appears as points connected by a trajectory line.</p>
-        <p>The <strong>Total weight</strong> mode shows your absolute weight. The <strong>Weight gain</strong> mode shows weight gained above your pre-pregnancy baseline — the quantity the research directly measures. Toggle between <strong>kg</strong> and <strong>lbs</strong> using the unit switcher. Enter either your <strong>last menstrual period (LMP)</strong> or your <strong>due date</strong> in Your profile — each auto-fills the other, and both together show your current gestational week. In the measurements table, entering a date in any row will also auto-fill its gestational week. Rows are automatically sorted by gestational week.</p>
+        <p>The <strong>Total weight</strong> mode shows your absolute weight. The <strong>Weight gain</strong> mode shows weight gained above your pre-pregnancy baseline, which is the quantity the research directly measures. Toggle between <strong>kg</strong> and <strong>lbs</strong> using the unit switcher. Enter either your <strong>last menstrual period (LMP)</strong> or your <strong>due date</strong> in Your profile; each auto-fills the other, and both together show your current gestational week. In the measurements table, entering a date in any row will also auto-fill its gestational week. Rows are automatically sorted by gestational week.</p>
         <p>Percentile labels: <em>below typical</em> = below P10, <em>within typical range</em> = P10–P90, <em>above typical</em> = above P90.</p>
-        <p><strong>Export:</strong> click the Export button to save a PNG of the chart, or use your browser's print function (Ctrl/Cmd+P) for a clean printable version.</p>
+        <p><strong>Export:</strong> saves a PNG of the chart with a white background.</p>
+        <p><strong>Share:</strong> copies a link to your clipboard that encodes your full state (profile, measurements, chart mode and units) so you can bookmark it or send it to your midwife or doctor. No data is stored on any server; everything lives in the URL itself.</p>
         <p>Reference: <a href="https://doi.org/10.1186/s12916-018-1189-1" target="_blank" rel="noopener">Santos et al., BMC Medicine 2018;16:201</a></p>
         <div class="disclaimer">⚠ This tool is for informational purposes only and does not constitute medical advice. Always discuss weight and nutrition with your healthcare provider.</div>
       </div>
@@ -669,7 +669,7 @@ function renderChart(groupData, baseWKg, currentPt, measurements) {
   // hover text for bands: show P10–P90 gain range at each week
   const bandHover = groupData.map((d, i) => {
     const lo = cv(d.P10), hi = cv(d.P90), med = cv(d.P50);
-    return `<b>Week ${d.week}</b><br>Gain range (P10–P90): ${lo.toFixed(1)}–${hi.toFixed(1)} ${ul}<br>Median gain: ${med.toFixed(1)} ${ul}`;
+    return `<b>Week ${d.week}</b><br>Gain range (P10-P90): ${lo.toFixed(1)} to ${hi.toFixed(1)} ${ul}<br>Median gain: ${med.toFixed(1)} ${ul}`;
   });
 
   const shapes = [
@@ -1045,7 +1045,10 @@ function syncSlider(inputId, sliderId) {
 }
 
 // ── Sort measurement rows by week (called on blur) ──
+let datePickerActive = false; // guard against focus disruption during date entry
+
 function sortMeasurementRows() {
+  if (datePickerActive) return; // never sort while a date picker is open
   const container = document.getElementById("measurementRows");
   const rows = [...container.querySelectorAll(".meas-row")];
   rows.sort((a, b) => {
@@ -1053,7 +1056,7 @@ function sortMeasurementRows() {
     const wb = parseFloat(b.querySelector(".meas-week").value) || Infinity;
     return wa - wb;
   });
-  rows.forEach(r => container.appendChild(r)); // re-append in sorted order
+  rows.forEach(r => container.appendChild(r));
   debounced();
 }
 
@@ -1064,7 +1067,7 @@ function addMeasurementRow(week="", weight="", date="") {
   row.className = "meas-row";
   row.dataset.id = measurementIdCounter++;
   row.innerHTML = `
-    <input type="text" class="meas-date" placeholder="DD/MM/YYYY" maxlength="10" value="${date}" title="Optional — auto-fills week from LMP">
+    <input type="date" class="meas-date" value="${date}" title="Optional: auto-fills week from LMP">
     <input type="number" class="meas-week"   min="0" max="44"   step="0.5" placeholder="e.g. 20" value="${week}">
     <input type="number" class="meas-weight" min="30" max="550" step="0.1" placeholder="e.g. 63"  value="${weight}">
     <button type="button" class="btn-remove" aria-label="Remove">×</button>
@@ -1072,44 +1075,51 @@ function addMeasurementRow(week="", weight="", date="") {
   const dateInp = row.querySelector(".meas-date");
   const weekInp = row.querySelector(".meas-week");
 
-  // Parse DD/MM/YYYY text → Date object
   function parseDateInput(str) {
     if (!str) return null;
-    const parts = str.split("/");
-    if (parts.length !== 3) return null;
-    const [d, m, y] = parts.map(Number);
-    if (!d || !m || !y || y < 1900 || y > 2100) return null;
-    const dt = new Date(y, m - 1, d);
-    return isNaN(dt.getTime()) ? null : dt;
+    const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (iso) return new Date(parseInt(iso[1]), parseInt(iso[2])-1, parseInt(iso[3]));
+    return null;
   }
 
-  // Auto-format as user types: insert slashes after DD and MM
-  dateInp.addEventListener("input", () => {
-    let v = dateInp.value.replace(/[^\d]/g, "");
-    if (v.length > 2) v = v.slice(0,2) + "/" + v.slice(2);
-    if (v.length > 5) v = v.slice(0,5) + "/" + v.slice(5);
-    if (v.length > 10) v = v.slice(0,10);
-    dateInp.value = v;
-  });
+  // Set flag on focus so nothing disrupts the date picker while open
+  dateInp.addEventListener("focus", () => { datePickerActive = true; });
 
-  // On blur: attempt to calculate week from LMP
-  dateInp.addEventListener("blur", () => {
-    const measDate = parseDateInput(dateInp.value);
-    if (!measDate) { sortMeasurementRows(); return; }
-    const dd = document.getElementById("dueDate").value;
-    if (dd) {
-      const due = new Date(dd);
-      const lmp = new Date(due.getTime() - 280 * 86400000);
-      const wks = (measDate - lmp) / (7 * 86400000);
-      if (wks >= 0 && wks <= 44) weekInp.value = Math.round(wks * 10) / 10;
+  // Chrome fires 'change' on every digit of year entry, not just when complete.
+  // Only act when the year is plausibly complete (>=2000).
+  dateInp.addEventListener("change", () => {
+    const val = dateInp.value; // YYYY-MM-DD
+    if (!val) { datePickerActive = false; debounced(); return; }
+    const year = parseInt(val.slice(0, 4));
+    if (year < 2000) return; // partial year entry — ignore, keep picker open
+
+    datePickerActive = false;
+    const measDate = parseDateInput(val);
+    if (measDate) {
+      const dd = document.getElementById("dueDate").value;
+      if (dd) {
+        const due = new Date(dd);
+        const lmp = new Date(due.getTime() - 280 * 86400000);
+        const wks = (measDate - lmp) / (7 * 86400000);
+        if (wks >= 0 && wks <= 44) weekInp.value = Math.round(wks * 10) / 10;
+      }
     }
     sortMeasurementRows();
   });
 
-  // Sort on blur of week field
-  weekInp.addEventListener("blur", () => sortMeasurementRows());
+  // On blur: picker dismissed, always clear flag and update
+  dateInp.addEventListener("blur", () => {
+    datePickerActive = false;
+    debounced();
+  });
 
-  row.querySelectorAll("input[type='number']").forEach(i => i.addEventListener("input", debounced));
+  // Sort on blur of week field — but only if date picker is not active
+  weekInp.addEventListener("blur", () => { if (!datePickerActive) sortMeasurementRows(); });
+
+  // Only update chart on number input, not during date picker interaction
+  row.querySelectorAll("input[type='number']").forEach(i =>
+    i.addEventListener("input", () => { if (!datePickerActive) debounced(); })
+  );
   row.querySelector(".btn-remove").addEventListener("click", () => { row.remove(); update(); });
   rows.appendChild(row);
 }
