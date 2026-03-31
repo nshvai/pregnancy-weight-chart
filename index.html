@@ -1198,6 +1198,24 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove("show"), 2800);
 }
 
+// ── Recalculate gestational weeks for all rows that have a date filled in ──
+function recalcRowWeeksFromDueDate() {
+  const dd = document.getElementById("dueDate").value;
+  if (!dd) return;
+  const due = new Date(dd);
+  const lmp = new Date(due.getTime() - 280 * 86400000);
+  document.querySelectorAll(".meas-row").forEach(row => {
+    const dateInp = row.querySelector(".meas-date");
+    const weekInp = row.querySelector(".meas-week");
+    if (!dateInp.value) return;
+    const year = parseInt(dateInp.value.slice(0, 4));
+    if (year < 2000) return;
+    const meas = new Date(dateInp.value);
+    const wks  = (meas - lmp) / (7 * 86400000);
+    if (wks >= 0 && wks <= 44) weekInp.value = Math.round(wks * 10) / 10;
+  });
+}
+
 // ── Init ──
 function init() {
   syncSlider("heightCm",       "heightSlider");
@@ -1206,10 +1224,12 @@ function init() {
   // LMP ↔ due date
   document.getElementById("lmpDate").addEventListener("change", () => {
     updateDatesFromLmp();
+    recalcRowWeeksFromDueDate();
     debounced();
   });
   document.getElementById("dueDate").addEventListener("change", () => {
     updateDatesFromDue();
+    recalcRowWeeksFromDueDate();
     debounced();
   });
 
@@ -1280,6 +1300,7 @@ function init() {
     document.getElementById("dueDate").value  = "";
     document.getElementById("weekComputed").classList.remove("visible");
     clearMeasurements();
+    addMeasurementRow(); // keep one empty row visible
     try { localStorage.removeItem("gwc_state"); } catch(e) {}
     update();
   });
@@ -1287,6 +1308,29 @@ function init() {
   // URL params take priority over localStorage
   loadFromURL();
   loadState();
+
+  // Fix 3: always default to "Total weight" and "kg" unless explicitly saved otherwise
+  // (localStorage and URL params may have overridden these — reset only on fresh load with no measurements)
+  if (document.querySelectorAll(".meas-row").length === 0 &&
+      !new URLSearchParams(location.search).has("mode") &&
+      !new URLSearchParams(location.search).has("unit")) {
+    // True fresh load — ensure defaults
+    if (chartMode !== "absolute") {
+      chartMode = "absolute";
+      document.getElementById("modeAbsolute").classList.add("active");
+      document.getElementById("modeGain").classList.remove("active");
+    }
+    if (unitMode !== "kg") {
+      applyUnit("kg");
+      document.getElementById("unitKg").classList.add("active");
+      document.getElementById("unitLbs").classList.remove("active");
+    }
+  }
+
+  // Fix 1: always show one empty row if measurements table is empty
+  if (document.querySelectorAll(".meas-row").length === 0) {
+    addMeasurementRow();
+  }
 
   // Re-render chart if system colour scheme changes
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", update);
