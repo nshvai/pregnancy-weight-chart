@@ -54,8 +54,8 @@
   .toggle-wrap  { background: #0e0e1a; }
   .unit-toggle  { background: #0e0e1a; }
   .toggle-btn.active { background: #2a2a3e; }
-  input[type="number"], input[type="date"] { background: #17172a; color: var(--ink); border-color: var(--border); }
-  input[type="number"]:focus, input[type="date"]:focus { background: #1e1e32; }
+  input[type="number"], input[type="date"], input[type="text"] { background: #17172a; color: var(--ink); border-color: var(--border); }
+  input[type="number"]:focus, input[type="date"]:focus, input[type="text"]:focus { background: #1e1e32; }
   .pill { background: #1a1a2e; }
   .btn-ghost { border-color: var(--border); }
   .btn-ghost:hover { background: #2a2a3e; }
@@ -187,8 +187,16 @@ h1 em { font-style: italic; color: var(--rose); }
 
 .chart-hint { margin-top: 14px; font-size: 0.82rem; color: var(--ink-muted); font-style: italic; text-align: center; }
 
-/* ── Two-column layout ── */
+/* ── Two-column layout (kept for any future use) ── */
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+/* ── Profile inner grid: height | weight | dates ── */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
 
 /* ── Panels ── */
 .panel {
@@ -212,7 +220,7 @@ h1 em { font-style: italic; color: var(--rose); }
 .field-input-wrap { position: relative; }
 .field-unit { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 0.83rem; color: var(--ink-muted); pointer-events: none; font-weight: 500; }
 
-input[type="number"], input[type="date"] {
+input[type="number"], input[type="date"], input[type="text"] {
   width: 100%; border: 1.5px solid var(--border); border-radius: var(--r-sm);
   padding: 11px 14px; font-family: inherit; font-size: 0.97rem;
   color: var(--ink); background: #fafafa;
@@ -222,7 +230,7 @@ input[type="number"], input[type="date"] {
 input[type="number"] { padding-right: 40px; }
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
-input[type="number"]:focus, input[type="date"]:focus {
+input[type="number"]:focus, input[type="date"]:focus, input[type="text"]:focus {
   outline: none; border-color: var(--rose); background: var(--white);
   box-shadow: 0 0 0 3px rgba(232,99,122,0.12);
 }
@@ -273,17 +281,18 @@ input[type="range"]::-moz-range-thumb {
 /* ── Measurements table ── */
 .meas-table { margin-top: 4px; }
 .meas-header {
-  display: grid; grid-template-columns: 1fr 1fr 36px; gap: 8px;
+  display: grid; grid-template-columns: 1fr 0.7fr 1fr 36px; gap: 8px;
   font-size: 0.73rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--ink-muted); padding: 0 2px 8px; border-bottom: 1px solid var(--border); margin-bottom: 8px;
 }
 #measurementRows { display: grid; gap: 8px; }
 .meas-row {
-  display: grid; grid-template-columns: 1fr 1fr 36px; gap: 8px;
+  display: grid; grid-template-columns: 1fr 0.7fr 1fr 36px; gap: 8px;
   align-items: center; animation: slideIn 0.2s ease;
 }
 @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
 .meas-row input { padding: 9px 12px; font-size: 0.9rem; }
+.meas-row .meas-date { font-size: 0.82rem; padding: 9px 8px; color: var(--ink-soft); letter-spacing: 0.02em; }
 .btn-remove {
   width: 36px; height: 36px; border: 1.5px solid var(--border); border-radius: 9px;
   background: #fafafa; cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -359,6 +368,7 @@ input[type="range"]::-moz-range-thumb {
 /* ── Responsive ── */
 @media (max-width: 720px) {
   .two-col { grid-template-columns: 1fr; }
+  .profile-grid { grid-template-columns: 1fr; }
   h1 { font-size: 2rem; }
   .chart-card { padding: 18px 14px 14px; }
   #chart { height: 400px; }
@@ -366,6 +376,11 @@ input[type="range"]::-moz-range-thumb {
   .wrap { padding: 0 14px 48px; }
   .range-wrap { display: none; }
   .chart-controls-row { gap: 7px; }
+  /* collapse date column on mobile — show week + weight only */
+  .meas-header { grid-template-columns: 0.8fr 1fr 36px; }
+  .meas-row    { grid-template-columns: 0.8fr 1fr 36px; }
+  .meas-date   { display: none; }
+  .meas-header > div:first-child { display: none; }
 }
 
 /* ── Animations ── */
@@ -436,21 +451,20 @@ input[type="range"]::-moz-range-thumb {
         <div class="chart-empty-text">Enter your height and pre-pregnancy weight to see your personalised curve</div>
       </div>
     </div>
-    <p class="chart-hint">Hover bands for reference range · trimester bands in grey · T = trimester</p>
+    <p class="chart-hint">Gestational age in weeks from last menstrual period (LMP) · hover bands for reference range · trimester bands in grey</p>
   </div>
 
-  <!-- Profile + Current measurement -->
-  <div class="two-col">
-
-    <!-- Profile -->
-    <div class="panel">
-      <div class="panel-title">
-        <div class="panel-icon">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1a6.5 6.5 0 1 0 0 13A6.5 6.5 0 0 0 7.5 1Z" stroke="#e8637a" stroke-width="1.3"/><path d="M7.5 10V7m0-2h.007" stroke="#e8637a" stroke-width="1.3" stroke-linecap="round"/></svg>
-        </div>
-        Your profile
+  <!-- Your profile (full width, 3-col inner grid) -->
+  <div class="panel panel-full" style="margin-bottom:20px">
+    <div class="panel-title">
+      <div class="panel-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1a6.5 6.5 0 1 0 0 13A6.5 6.5 0 0 0 7.5 1Z" stroke="#e8637a" stroke-width="1.3"/><path d="M7.5 10V7m0-2h.007" stroke="#e8637a" stroke-width="1.3" stroke-linecap="round"/></svg>
       </div>
+      Your profile
+    </div>
 
+    <div class="profile-grid">
+      <!-- Height -->
       <div class="field">
         <label class="field-label" for="heightCm">Height</label>
         <div class="field-input-wrap">
@@ -463,6 +477,7 @@ input[type="range"]::-moz-range-thumb {
         </div>
       </div>
 
+      <!-- Pre-pregnancy weight -->
       <div class="field">
         <label class="field-label" for="prePregWeightKg">Pre-pregnancy weight</label>
         <div class="field-input-wrap">
@@ -474,81 +489,72 @@ input[type="range"]::-moz-range-thumb {
           <div class="range-labels" id="weightSliderLabels"><span>40</span><span>150</span></div>
         </div>
       </div>
-    </div>
 
-    <!-- Current measurement -->
-    <div class="panel">
-      <div class="panel-title">
-        <div class="panel-icon">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 13L7.5 2 13 13" stroke="#e8637a" stroke-width="1.3" stroke-linejoin="round"/><path d="M4 10h7" stroke="#e8637a" stroke-width="1.3"/></svg>
+      <!-- LMP + Due date (stacked in one cell) -->
+      <div>
+        <div class="field">
+          <label class="field-label" for="lmpDate">Last menstrual period <span style="font-weight:400;color:var(--ink-muted)">(optional)</span></label>
+          <input type="date" id="lmpDate">
         </div>
-        Today's measurement
-      </div>
-
-      <!-- Due date → auto-week -->
-      <div class="field">
-        <label class="field-label" for="dueDate">Due date <span style="font-weight:400;color:var(--ink-muted)">(optional)</span></label>
-        <input type="date" id="dueDate">
+        <div class="field" style="margin-top:10px">
+          <label class="field-label" for="dueDate">Due date <span style="font-weight:400;color:var(--ink-muted)">(optional)</span></label>
+          <input type="date" id="dueDate">
+        </div>
         <div class="week-computed" id="weekComputed">
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" stroke="#5b8c7a" stroke-width="1.2"/><path d="M6.5 3.5v3l2 1.5" stroke="#5b8c7a" stroke-width="1.2" stroke-linecap="round"/></svg>
-          You are currently <strong id="weekComputedVal">—</strong> weeks pregnant
-        </div>
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="currentWeek">Gestational age</label>
-        <div class="field-input-wrap">
-          <input type="number" id="currentWeek" min="0" max="44" step="0.5" placeholder="e.g. 24">
-          <span class="field-unit">wks</span>
-        </div>
-        <p class="field-hint">Filled automatically from due date, or enter manually</p>
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="currentWeightKg">Current weight</label>
-        <div class="field-input-wrap">
-          <input type="number" id="currentWeightKg" min="30" max="250" step="0.1" placeholder="e.g. 66">
-          <span class="field-unit" id="currentWeightUnit">kg</span>
-        </div>
-      </div>
-
-      <div class="current-summary" id="currentSummary">
-        <div class="current-summary-title">Your snapshot</div>
-        <div class="current-summary-stats">
-          <div>
-            <div class="stat-val" id="snapGain">—</div>
-            <div class="stat-lbl" id="snapGainLbl">kg gained</div>
-          </div>
-          <div>
-            <div class="stat-val" id="snapPct">—</div>
-            <div class="stat-lbl">percentile</div>
-            <div class="pct-label" id="snapPctLabel"></div>
-          </div>
+          Currently <strong id="weekComputedVal">—</strong> weeks (LMP)
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Past weigh-ins -->
+  <!-- Your measurements (full width) -->
   <div class="panel panel-full" style="margin-bottom:20px">
     <div class="panel-title">
       <div class="panel-icon">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1.5" y="2.5" width="12" height="10" rx="1.5" stroke="#e8637a" stroke-width="1.3"/><path d="M5 2.5V1m5 1.5V1M1.5 6h12" stroke="#e8637a" stroke-width="1.3" stroke-linecap="round"/></svg>
       </div>
-      Past weigh-ins
+      Your measurements
       <span class="wt-count-badge hidden" id="measCountBadge"></span>
     </div>
     <div class="meas-table">
-      <div class="meas-header"><div>Week</div><div id="measWeightHeader">Weight (kg)</div><div></div></div>
+      <div class="meas-header"><div>Date <span style="font-weight:400">(opt.)</span></div><div>Week (LMP)</div><div id="measWeightHeader">Weight (kg)</div><div></div></div>
       <div id="measurementRows"></div>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="addMeasurementBtn" type="button">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
-        Add row
+        Add measurement
       </button>
       <button class="btn btn-sage"  id="sampleBtn" type="button">Load example</button>
       <button class="btn btn-ghost" id="clearBtn"  type="button">Clear all</button>
+    </div>
+  </div>
+
+  <!-- Latest snapshot (full width, below measurements) -->
+  <div class="panel panel-full" id="snapshotPanel" style="margin-bottom:20px">
+    <div class="panel-title">
+      <div class="panel-icon">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 13L7.5 2 13 13" stroke="#e8637a" stroke-width="1.3" stroke-linejoin="round"/><path d="M4 10h7" stroke="#e8637a" stroke-width="1.3"/></svg>
+      </div>
+      Latest snapshot
+    </div>
+    <div class="snapshot-empty" id="snapshotEmpty">
+      <p style="color:var(--ink-muted);font-size:0.88rem;font-style:italic;line-height:1.6">Add your first measurement above to see your weight gain and percentile here.</p>
+    </div>
+    <div class="current-summary" id="currentSummary" style="display:none">
+      <div class="current-summary-title" id="snapTitle">Most recent · week —</div>
+      <div class="current-summary-stats">
+        <div>
+          <div class="stat-val" id="snapGain">—</div>
+          <div class="stat-lbl" id="snapGainLbl">kg gained</div>
+        </div>
+        <div>
+          <div class="stat-val" id="snapPct">—</div>
+          <div class="stat-lbl">percentile</div>
+          <div class="pct-label" id="snapPctLabel"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -557,9 +563,10 @@ input[type="range"]::-moz-range-thumb {
     <details>
       <summary>About this tool</summary>
       <div class="about-body">
+        <p>This tool was born out of frustration with pregnancy weight charts that show little more than two straight lines at different angles — a blunt instrument for something that deserves more nuance. The reference curves here reflect how weight actually changes during pregnancy: non-linearly, differently across BMI groups, and with real variation around the median.</p>
         <p>This chart uses week-specific centile tables for six pre-pregnancy BMI groups, derived from a large international study of 218,216 pregnant women across 33 cohorts in Europe, North America, and Oceania. The reference population is predominantly of European/North American/Oceanian background — curves may be less representative for women from other ethnic backgrounds.</p>
         <p>Bands show the P10–P90 (lighter) and P25–P75 (darker) reference intervals. The median (P50) is the solid line. Hovering over the bands shows the reference gain range at that week. Trimester boundaries appear as light grey bands. Your personal data appears as points connected by a trajectory line.</p>
-        <p>The <strong>Total weight</strong> mode shows your absolute weight. The <strong>Weight gain</strong> mode shows weight gained above your pre-pregnancy baseline — the quantity the research directly measures. Toggle between <strong>kg</strong> and <strong>lbs</strong> using the unit switcher. Entering your <strong>due date</strong> auto-calculates your current gestational week.</p>
+        <p>The <strong>Total weight</strong> mode shows your absolute weight. The <strong>Weight gain</strong> mode shows weight gained above your pre-pregnancy baseline — the quantity the research directly measures. Toggle between <strong>kg</strong> and <strong>lbs</strong> using the unit switcher. Enter either your <strong>last menstrual period (LMP)</strong> or your <strong>due date</strong> in Your profile — each auto-fills the other, and both together show your current gestational week. In the measurements table, entering a date in any row will also auto-fill its gestational week. Rows are automatically sorted by gestational week.</p>
         <p>Percentile labels: <em>below typical</em> = below P10, <em>within typical range</em> = P10–P90, <em>above typical</em> = above P90.</p>
         <p><strong>Export:</strong> click the Export button to save a PNG of the chart, or use your browser's print function (Ctrl/Cmd+P) for a clean printable version.</p>
         <p>Reference: <a href="https://doi.org/10.1186/s12916-018-1189-1" target="_blank" rel="noopener">Santos et al., BMC Medicine 2018;16:201</a></p>
@@ -632,18 +639,6 @@ function pctLabel(pct) {
   return "within typical range";
 }
 
-// ── Due-date → gestational week ──
-function weeksFromDueDate(dueDateStr) {
-  if (!dueDateStr) return null;
-  const due   = new Date(dueDateStr);
-  const today = new Date();
-  if (isNaN(due.getTime())) return null;
-  // LMP ≈ due date − 280 days
-  const lmp     = new Date(due.getTime() - 280 * 86400000);
-  const diffMs  = today.getTime() - lmp.getTime();
-  const weeks   = diffMs / (7 * 86400000);
-  return (weeks >= 0 && weeks <= 44) ? Math.round(weeks * 10) / 10 : null;
-}
 
 // ── Chart rendering ──
 function renderChart(groupData, baseWKg, currentPt, measurements) {
@@ -756,7 +751,7 @@ function renderChart(groupData, baseWKg, currentPt, measurements) {
     traces.push({
       x: measurements.map(m => m.week),
       y: measurements.map(m => cv(isGain ? m.weightKg - baseWKg : m.weightKg)),
-      mode:"markers", name:"Past weigh-ins",
+      mode:"markers", name:"Measurements",
       marker:{ size:9, color:TEAL, symbol:"circle" },
       customdata: cd,
       hovertemplate:`<b>Week %{x}</b><br>Gained: %{customdata[0]:.1f} ${ul}<br>Percentile: %{customdata[1]:.1f} · %{customdata[2]}<extra>Past</extra>`
@@ -781,23 +776,25 @@ function renderChart(groupData, baseWKg, currentPt, measurements) {
     ? `Weight gain above baseline (${ul})`
     : `Your weight (${ul})`;
 
+  const isMobile = window.innerWidth < 720;
   const pal = chartPalette();
   const layout = {
-    margin:{ l:68, r:16, t:26, b:52 },
+    margin:{ l:isMobile ? 52 : 68, r:16, t: isMobile ? 8 : 26, b: isMobile ? 44 : 52 },
     paper_bgcolor:"rgba(0,0,0,0)",
     plot_bgcolor:"rgba(0,0,0,0)",
     shapes, annotations,
     xaxis:{
-      title:{ text:"Gestational age (weeks)", font:{size:12,color:pal.label} },
+      title:{ text:"Gestational age (weeks)", font:{size: isMobile ? 10 : 12, color:pal.label} },
       range:[0,44], gridcolor:pal.grid, zeroline:false,
-      tickfont:{size:11,color:pal.tick}
+      tickfont:{size: isMobile ? 9 : 11, color:pal.tick}
     },
     yaxis:{
-      title:{ text:yTitle, font:{size:12,color:pal.label} },
+      title:{ text: isMobile ? yTitle.replace(" above baseline","") : yTitle, font:{size: isMobile ? 10 : 12, color:pal.label} },
       gridcolor:pal.grid,
       zeroline: isGain, zerolinecolor:pal.zeroline, zerolinewidth:1,
-      tickfont:{size:11,color:pal.tick}
+      tickfont:{size: isMobile ? 9 : 11, color:pal.tick}
     },
+    showlegend: !isMobile,
     legend:{ orientation:"h", y:1.11, x:0, bgcolor:"rgba(0,0,0,0)", font:{size:11,color:pal.legend} },
     hovermode:"closest",
     hoverlabel:{ bgcolor: isDark() ? "#1e1e2e" : "white", bordercolor:"rgba(128,128,180,0.2)", font:{size:12,color: isDark() ? "#eeeef5" : "#1a1a2e"}, namelength:-1 }
@@ -829,20 +826,17 @@ function applyUnit(newUnit) {
   const ul   = unitLabel();
 
   // update field unit labels
-  document.getElementById("weightUnit").textContent       = ul;
-  document.getElementById("currentWeightUnit").textContent = ul;
-  document.getElementById("measWeightHeader").textContent  = `Weight (${ul})`;
-  document.getElementById("snapGainLbl").textContent        = `${ul} gained`;
+  document.getElementById("weightUnit").textContent      = ul;
+  document.getElementById("measWeightHeader").textContent = `Weight (${ul})`;
+  document.getElementById("snapGainLbl").textContent     = `${ul} gained`;
 
   // convert stored input values
   const convert = prev === "kg"
     ? v => (v * KG_TO_LBS)
     : v => (v / KG_TO_LBS);
 
-  ["prePregWeightKg","currentWeightKg"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el.value !== "") el.value = convert(parseFloat(el.value)).toFixed(1);
-  });
+  const wInp = document.getElementById("prePregWeightKg");
+  if (wInp.value !== "") wInp.value = convert(parseFloat(wInp.value)).toFixed(1);
 
   // convert all measurement rows
   document.querySelectorAll(".meas-weight").forEach(el => {
@@ -867,11 +861,10 @@ function applyUnit(newUnit) {
 function saveState() {
   try {
     localStorage.setItem("gwc_state", JSON.stringify({
-      h:   document.getElementById("heightCm").value,
-      w:   document.getElementById("prePregWeightKg").value,
-      cWk: document.getElementById("currentWeek").value,
-      cWt: document.getElementById("currentWeightKg").value,
-      dd:  document.getElementById("dueDate").value,
+      h:    document.getElementById("heightCm").value,
+      w:    document.getElementById("prePregWeightKg").value,
+      lmp:  document.getElementById("lmpDate").value,
+      dd:   document.getElementById("dueDate").value,
       measurements: getMeasurementsRaw(),
       mode: chartMode,
       unit: unitMode
@@ -884,31 +877,25 @@ function loadState() {
     const raw = localStorage.getItem("gwc_state");
     if (!raw) return;
     const s = JSON.parse(raw);
-    // restore unit first so inputs go in right units
     if (s.unit && s.unit !== unitMode) {
       unitMode = s.unit;
       document.getElementById("unitKg") .classList.toggle("active", unitMode === "kg");
       document.getElementById("unitLbs").classList.toggle("active", unitMode === "lbs");
-      // update labels without converting (values already stored in saved unit)
       const ul = unitLabel();
-      document.getElementById("weightUnit").textContent        = ul;
-      document.getElementById("currentWeightUnit").textContent = ul;
-      document.getElementById("measWeightHeader").textContent  = `Weight (${ul})`;
-      document.getElementById("snapGainLbl").textContent       = `${ul} gained`;
+      document.getElementById("weightUnit").textContent       = ul;
+      document.getElementById("measWeightHeader").textContent = `Weight (${ul})`;
     }
-    if (s.h)   document.getElementById("heightCm").value       = s.h;
+    if (s.h)   document.getElementById("heightCm").value        = s.h;
     if (s.w)   document.getElementById("prePregWeightKg").value = s.w;
-    if (s.cWk) document.getElementById("currentWeek").value    = s.cWk;
-    if (s.cWt) document.getElementById("currentWeightKg").value = s.cWt;
-    if (s.dd)  document.getElementById("dueDate").value         = s.dd;
-    if (s.measurements) s.measurements.forEach(m => addMeasurementRow(m.week, m.weight));
+    if (s.lmp) document.getElementById("lmpDate").value         = s.lmp;
+    if (s.dd)  { document.getElementById("dueDate").value = s.dd; updateDueDateComputed(); }
+    if (s.measurements) s.measurements.forEach(m => addMeasurementRow(m.week, m.weight, m.date || ""));
     if (s.mode) {
       chartMode = s.mode;
       document.getElementById("modeAbsolute").classList.toggle("active", chartMode === "absolute");
       document.getElementById("modeGain")    .classList.toggle("active", chartMode === "gain");
     }
     syncSlidersFromInputs();
-    updateDueDateComputed();
   } catch(e) {}
 }
 
@@ -925,23 +912,68 @@ function syncSlidersFromInputs() {
   });
 }
 
-// ── Inputs ──
-function getInputsKg() {
-  // always return in kg internally
-  const h   = parseFloat(document.getElementById("heightCm").value);
-  const wRaw = parseFloat(document.getElementById("prePregWeightKg").value);
-  const w   = isFinite(wRaw) ? toKg(wRaw) : NaN;
-  const cWk = parseFloat(document.getElementById("currentWeek").value)    || NaN;
-  const cWtRaw = parseFloat(document.getElementById("currentWeightKg").value);
-  const cWt = isFinite(cWtRaw) ? toKg(cWtRaw) : NaN;
-  return { h, w, cWk, cWt };
+// ── LMP ↔ Due date bidirectional calculation ──
+const MS_PER_WEEK = 7 * 86400000;
+const GESTATION_MS = 280 * 86400000; // 40 weeks
+
+function updateDatesFromLmp() {
+  const lmp = document.getElementById("lmpDate").value;
+  if (!lmp) return;
+  const lmpDate = new Date(lmp);
+  if (isNaN(lmpDate)) return;
+  // Fill due date
+  const due = new Date(lmpDate.getTime() + GESTATION_MS);
+  document.getElementById("dueDate").value = due.toISOString().slice(0, 10);
+  updateWeekDisplay(lmpDate);
+}
+
+function updateDatesFromDue() {
+  const dd = document.getElementById("dueDate").value;
+  if (!dd) return;
+  const due = new Date(dd);
+  if (isNaN(due)) return;
+  // Fill LMP
+  const lmp = new Date(due.getTime() - GESTATION_MS);
+  document.getElementById("lmpDate").value = lmp.toISOString().slice(0, 10);
+  updateWeekDisplay(lmp);
+}
+
+function updateWeekDisplay(lmpDate) {
+  const el  = document.getElementById("weekComputed");
+  const val = document.getElementById("weekComputedVal");
+  if (!lmpDate) { el.classList.remove("visible"); return; }
+  const today = new Date();
+  const wks   = (today - lmpDate) / MS_PER_WEEK;
+  if (wks >= 0 && wks <= 44) {
+    val.textContent = wks.toFixed(1);
+    el.classList.add("visible");
+  } else {
+    el.classList.remove("visible");
+  }
+}
+
+// legacy wrapper called from loadState/loadFromURL
+function updateDueDateComputed() {
+  const dd = document.getElementById("dueDate").value;
+  if (dd) updateDatesFromDue();
+}
+
+// also used by measurement rows
+function weeksFromDueDate(dueDateStr) {
+  if (!dueDateStr) return null;
+  const due = new Date(dueDateStr);
+  if (isNaN(due)) return null;
+  const lmp   = new Date(due.getTime() - GESTATION_MS);
+  const today = new Date();
+  const wks   = (today - lmp) / MS_PER_WEEK;
+  return (wks >= 0 && wks <= 44) ? Math.round(wks * 10) / 10 : null;
 }
 
 function getMeasurementsRaw() {
-  // returns {week, weight} in current display unit (for storage)
   return [...document.querySelectorAll(".meas-row")].map(row => ({
     week:   parseFloat(row.querySelector(".meas-week").value),
-    weight: parseFloat(row.querySelector(".meas-weight").value)
+    weight: parseFloat(row.querySelector(".meas-weight").value),
+    date:   row.querySelector(".meas-date").value || ""
   })).filter(m => isFinite(m.week) && isFinite(m.weight));
 }
 
@@ -951,25 +983,11 @@ function getMeasurementsKg() {
     .sort((a,b) => a.week - b.week);
 }
 
-// ── Due date computed display ──
-function updateDueDateComputed() {
-  const dd  = document.getElementById("dueDate").value;
-  const wks = weeksFromDueDate(dd);
-  const el  = document.getElementById("weekComputed");
-  const val = document.getElementById("weekComputedVal");
-  if (wks !== null) {
-    val.textContent = wks.toFixed(1);
-    el.classList.add("visible");
-    // auto-fill the gestational week field
-    document.getElementById("currentWeek").value = wks.toFixed(1);
-  } else {
-    el.classList.remove("visible");
-  }
-}
-
 // ── Main update ──
 function update() {
-  const { h, w, cWk, cWt } = getInputsKg();
+  const h  = parseFloat(document.getElementById("heightCm").value);
+  const wRaw = parseFloat(document.getElementById("prePregWeightKg").value);
+  const w  = isFinite(wRaw) ? toKg(wRaw) : NaN;
   const valid = isFinite(h) && isFinite(w) && h>=120 && h<=220 && w>=35 && w<=200;
 
   document.getElementById("chartEmpty").classList.toggle("hidden", valid);
@@ -980,33 +998,33 @@ function update() {
   if (!groupData) return;
 
   const measurements = getMeasurementsKg();
-  const hasCurrent   = isFinite(cWk) && isFinite(cWt);
-  const currentPt    = hasCurrent ? { week:cWk, weightKg:cWt } : null;
-  const filteredMeas = currentPt
-    ? measurements.filter(m => !(Math.abs(m.week-cWk)<1e-9 && Math.abs(m.weightKg-cWt)<1e-9))
-    : measurements;
 
-  renderChart(groupData, w, currentPt, filteredMeas);
+  renderChart(groupData, w, null, measurements);
 
   // count badge
-  const total = filteredMeas.length + (currentPt ? 1 : 0);
   const badge = document.getElementById("measCountBadge");
-  badge.textContent = total + " weigh-in" + (total !== 1 ? "s" : "") + " logged";
-  badge.classList.toggle("hidden", total === 0);
+  badge.textContent = measurements.length + " measurement" + (measurements.length !== 1 ? "s" : "");
+  badge.classList.toggle("hidden", measurements.length === 0);
 
-  // snapshot
-  const sumEl = document.getElementById("currentSummary");
-  if (currentPt) {
-    const gainKg = cWt - w;
-    const row    = closestRow(groupData, cWk);
-    const pct    = estimatePercentile(row, gainKg);
-    const gainDisp = toDisplay(gainKg);
-    document.getElementById("snapGain").textContent     = (gainDisp >= 0 ? "+" : "") + gainDisp.toFixed(1);
+  // snapshot from latest measurement (highest week)
+  const sumEl   = document.getElementById("currentSummary");
+  const emptyEl = document.getElementById("snapshotEmpty");
+  if (measurements.length > 0) {
+    const latest  = measurements[measurements.length - 1]; // sorted by week
+    const gainKg  = latest.weightKg - w;
+    const gainD   = toDisplay(gainKg);
+    const row     = closestRow(groupData, latest.week);
+    const pct     = estimatePercentile(row, gainKg);
+    document.getElementById("snapTitle").textContent    = `Most recent · week ${latest.week}`;
+    document.getElementById("snapGain").textContent     = (gainD >= 0 ? "+" : "") + gainD.toFixed(1);
+    document.getElementById("snapGainLbl").textContent  = unitLabel() + " gained";
     document.getElementById("snapPct").textContent      = pct != null ? Math.round(pct) + "th" : "—";
     document.getElementById("snapPctLabel").textContent = pctLabel(pct);
-    sumEl.classList.add("visible");
+    sumEl.style.display   = "block";
+    emptyEl.style.display = "none";
   } else {
-    sumEl.classList.remove("visible");
+    sumEl.style.display   = "none";
+    emptyEl.style.display = "block";
   }
 
   saveState();
@@ -1026,18 +1044,72 @@ function syncSlider(inputId, sliderId) {
   updateSliderFill(sl);
 }
 
+// ── Sort measurement rows by week (called on blur) ──
+function sortMeasurementRows() {
+  const container = document.getElementById("measurementRows");
+  const rows = [...container.querySelectorAll(".meas-row")];
+  rows.sort((a, b) => {
+    const wa = parseFloat(a.querySelector(".meas-week").value) || Infinity;
+    const wb = parseFloat(b.querySelector(".meas-week").value) || Infinity;
+    return wa - wb;
+  });
+  rows.forEach(r => container.appendChild(r)); // re-append in sorted order
+  debounced();
+}
+
 // ── Measurement rows ──
-function addMeasurementRow(week="", weight="") {
+function addMeasurementRow(week="", weight="", date="") {
   const rows = document.getElementById("measurementRows");
   const row  = document.createElement("div");
   row.className = "meas-row";
   row.dataset.id = measurementIdCounter++;
   row.innerHTML = `
+    <input type="text" class="meas-date" placeholder="DD/MM/YYYY" maxlength="10" value="${date}" title="Optional — auto-fills week from LMP">
     <input type="number" class="meas-week"   min="0" max="44"   step="0.5" placeholder="e.g. 20" value="${week}">
     <input type="number" class="meas-weight" min="30" max="550" step="0.1" placeholder="e.g. 63"  value="${weight}">
     <button type="button" class="btn-remove" aria-label="Remove">×</button>
   `;
-  row.querySelectorAll("input").forEach(i => i.addEventListener("input", debounced));
+  const dateInp = row.querySelector(".meas-date");
+  const weekInp = row.querySelector(".meas-week");
+
+  // Parse DD/MM/YYYY text → Date object
+  function parseDateInput(str) {
+    if (!str) return null;
+    const parts = str.split("/");
+    if (parts.length !== 3) return null;
+    const [d, m, y] = parts.map(Number);
+    if (!d || !m || !y || y < 1900 || y > 2100) return null;
+    const dt = new Date(y, m - 1, d);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+
+  // Auto-format as user types: insert slashes after DD and MM
+  dateInp.addEventListener("input", () => {
+    let v = dateInp.value.replace(/[^\d]/g, "");
+    if (v.length > 2) v = v.slice(0,2) + "/" + v.slice(2);
+    if (v.length > 5) v = v.slice(0,5) + "/" + v.slice(5);
+    if (v.length > 10) v = v.slice(0,10);
+    dateInp.value = v;
+  });
+
+  // On blur: attempt to calculate week from LMP
+  dateInp.addEventListener("blur", () => {
+    const measDate = parseDateInput(dateInp.value);
+    if (!measDate) { sortMeasurementRows(); return; }
+    const dd = document.getElementById("dueDate").value;
+    if (dd) {
+      const due = new Date(dd);
+      const lmp = new Date(due.getTime() - 280 * 86400000);
+      const wks = (measDate - lmp) / (7 * 86400000);
+      if (wks >= 0 && wks <= 44) weekInp.value = Math.round(wks * 10) / 10;
+    }
+    sortMeasurementRows();
+  });
+
+  // Sort on blur of week field
+  weekInp.addEventListener("blur", () => sortMeasurementRows());
+
+  row.querySelectorAll("input[type='number']").forEach(i => i.addEventListener("input", debounced));
   row.querySelector(".btn-remove").addEventListener("click", () => { row.remove(); update(); });
   rows.appendChild(row);
 }
@@ -1048,17 +1120,19 @@ function clearMeasurements() {
 
 // ── URL share encode / decode ──
 function buildShareURL() {
-  const { h, w, cWk, cWt } = getInputsKg();
+  const hDisp = parseFloat(document.getElementById("heightCm").value);
+  const wDisp = parseFloat(document.getElementById("prePregWeightKg").value);
+  const hCm   = isFinite(hDisp) ? (unitMode === "lbs" ? hDisp / CM_TO_IN : hDisp) : NaN;
+  const wKg   = isFinite(wDisp) ? toKg(wDisp) : NaN;
   const measurements = getMeasurementsKg();
   const params = new URLSearchParams();
-  if (isFinite(h))   params.set("h",    h.toFixed(1));
-  if (isFinite(w))   params.set("w",    w.toFixed(1));
-  if (isFinite(cWk)) params.set("wk",   cWk.toFixed(1));
-  if (isFinite(cWt)) params.set("cw",   cWt.toFixed(1));
-  const dd = document.getElementById("dueDate").value;
-  if (dd) params.set("dd", dd);
+  if (isFinite(hCm)) params.set("h", hCm.toFixed(1));
+  if (isFinite(wKg)) params.set("w", wKg.toFixed(1));
+  const lmp = document.getElementById("lmpDate").value;
+  const dd  = document.getElementById("dueDate").value;
+  if (lmp) params.set("lmp", lmp);
+  if (dd)  params.set("dd",  dd);
   if (measurements.length) {
-    // encode as "week:kg,week:kg"
     params.set("m", measurements.map(m => `${m.week}:${m.weightKg.toFixed(1)}`).join(","));
   }
   if (chartMode !== "absolute") params.set("mode", chartMode);
@@ -1068,37 +1142,29 @@ function buildShareURL() {
 
 function loadFromURL() {
   const params = new URLSearchParams(location.search);
-  if (!params.has("h") && !params.has("w")) return; // nothing encoded
+  if (!params.has("h") && !params.has("w")) return;
 
   const hKg  = parseFloat(params.get("h"));
   const wKg  = parseFloat(params.get("w"));
-  const wk   = parseFloat(params.get("wk"));
-  const cwKg = parseFloat(params.get("cw"));
-  const dd   = params.get("dd") || "";
+  const lmp  = params.get("lmp") || "";
+  const dd   = params.get("dd")  || "";
   const mode = params.get("mode") || "absolute";
   const unit = params.get("unit") || "kg";
   const mStr = params.get("m") || "";
 
-  // apply unit first
   if (unit !== unitMode) {
     unitMode = unit;
     document.getElementById("unitKg") .classList.toggle("active", unitMode === "kg");
     document.getElementById("unitLbs").classList.toggle("active", unitMode === "lbs");
     const ul = unitLabel();
-    document.getElementById("weightUnit").textContent        = ul;
-    document.getElementById("currentWeightUnit").textContent = ul;
-    document.getElementById("measWeightHeader").textContent  = `Weight (${ul})`;
-    document.getElementById("snapGainLbl").textContent       = `${ul} gained`;
+    document.getElementById("weightUnit").textContent       = ul;
+    document.getElementById("measWeightHeader").textContent = `Weight (${ul})`;
   }
 
   if (isFinite(hKg)) document.getElementById("heightCm").value        = toDisplay(hKg).toFixed(1);
   if (isFinite(wKg)) document.getElementById("prePregWeightKg").value  = toDisplay(wKg).toFixed(1);
-  if (isFinite(wk))  document.getElementById("currentWeek").value      = wk.toFixed(1);
-  if (isFinite(cwKg))document.getElementById("currentWeightKg").value  = toDisplay(cwKg).toFixed(1);
-  if (dd) {
-    document.getElementById("dueDate").value = dd;
-    updateDueDateComputed();
-  }
+  if (lmp) document.getElementById("lmpDate").value = lmp;
+  if (dd)  { document.getElementById("dueDate").value = dd; updateDueDateComputed(); }
   if (mStr) {
     mStr.split(",").forEach(pair => {
       const [wkStr, kgStr] = pair.split(":");
@@ -1127,12 +1193,13 @@ function init() {
   syncSlider("heightCm",       "heightSlider");
   syncSlider("prePregWeightKg","weightSlider");
 
-  ["currentWeek","currentWeightKg"].forEach(id =>
-    document.getElementById(id).addEventListener("input", debounced));
-
-  // due date
+  // LMP ↔ due date
+  document.getElementById("lmpDate").addEventListener("change", () => {
+    updateDatesFromLmp();
+    debounced();
+  });
   document.getElementById("dueDate").addEventListener("change", () => {
-    updateDueDateComputed();
+    updateDatesFromDue();
     debounced();
   });
 
@@ -1183,7 +1250,6 @@ function init() {
     navigator.clipboard.writeText(url).then(() => {
       showToast("Link copied to clipboard ✓");
     }).catch(() => {
-      // fallback: show the URL in prompt
       prompt("Copy this link:", url);
     });
   });
@@ -1192,11 +1258,7 @@ function init() {
   document.getElementById("addMeasurementBtn").addEventListener("click", () => addMeasurementRow());
 
   document.getElementById("sampleBtn").addEventListener("click", () => {
-    // sample data in kg; convert if needed
-    const base = 60;
-    document.getElementById("prePregWeightKg").value = toDisplay(base).toFixed(1);
-    document.getElementById("currentWeek").value     = "28";
-    document.getElementById("currentWeightKg").value = toDisplay(68).toFixed(1);
+    document.getElementById("prePregWeightKg").value = toDisplay(60).toFixed(1);
     clearMeasurements();
     [[12,61.2],[20,64.0],[28,68.0]].forEach(([w,kg]) => addMeasurementRow(w, toDisplay(kg).toFixed(1)));
     syncSlidersFromInputs();
@@ -1204,9 +1266,8 @@ function init() {
   });
 
   document.getElementById("clearBtn").addEventListener("click", () => {
-    document.getElementById("currentWeek").value      = "";
-    document.getElementById("currentWeightKg").value  = "";
-    document.getElementById("dueDate").value           = "";
+    document.getElementById("lmpDate").value  = "";
+    document.getElementById("dueDate").value  = "";
     document.getElementById("weekComputed").classList.remove("visible");
     clearMeasurements();
     try { localStorage.removeItem("gwc_state"); } catch(e) {}
