@@ -29,46 +29,6 @@
   --r-sm: 12px; --r-md: 20px; --r-lg: 28px; --r-xl: 36px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ink:       #eeeef5;
-    --ink-soft:  #a8a8c0;
-    --ink-muted: #6e6e88;
-    --rose:      #e8637a;
-    --rose-pale: rgba(232,99,122,0.15);
-    --rose-mid:  #c04560;
-    --sage:      #7ab8a4;
-    --sage-pale: rgba(91,140,122,0.15);
-    --cream:     #13131f;
-    --white:     #1e1e2e;
-    --border:    rgba(255,255,255,0.08);
-    --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
-    --shadow-md: 0 8px 32px rgba(0,0,0,0.4);
-    --shadow-lg: 0 20px 60px rgba(0,0,0,0.5);
-  }
-  body::before {
-    background:
-      radial-gradient(ellipse 70% 50% at 10% 0%,  rgba(232,99,122,0.06) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 90% 100%, rgba(91,140,122,0.05) 0%, transparent 50%);
-  }
-  .toggle-wrap  { background: #0e0e1a; }
-  .unit-toggle  { background: #0e0e1a; }
-  .toggle-btn.active { background: #2a2a3e; }
-  input[type="number"], input[type="date"] { background: #17172a; color: var(--ink); border-color: var(--border); }
-  input[type="number"]:focus, input[type="date"]:focus { background: #1e1e32; }
-  .pill { background: #1a1a2e; }
-  .btn-ghost { border-color: var(--border); }
-  .btn-ghost:hover { background: #2a2a3e; }
-  .btn-export { background: #1e1e2e; color: var(--ink-soft); border-color: var(--border); }
-  .btn-export:hover { background: var(--sage-pale); }
-  .btn-remove { background: #1a1a2a; }
-  .about-card details summary::after { color: var(--rose); }
-  .about-body .disclaimer { background: #2a1e00; border-color: #f4b942; color: #c89a40; }
-  #fafafa, .meas-row input { background: #17172a; }
-  .chart-empty-text { color: var(--ink-muted); }
-  /* keep chart backgrounds transparent so dark bg shows through */
-  .share-toast { background: #2a2a3e; color: var(--ink); border-color: var(--border); }
-}
 
 html { scroll-behavior: smooth; }
 body {
@@ -123,7 +83,7 @@ h1 em { font-style: italic; color: var(--rose); }
   display: flex; align-items: flex-start; justify-content: space-between;
   margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
 }
-.chart-title { font-family: "DM Serif Display", serif; font-size: 1.25rem; color: var(--ink); }
+.chart-title { font-family: "DM Serif Display", serif; font-size: 1.55rem; color: var(--ink); }
 
 .chart-controls-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
@@ -233,6 +193,9 @@ input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
 input[type="number"]:focus, input[type="date"]:focus {
   outline: none; border-color: var(--rose); background: var(--white);
   box-shadow: 0 0 0 3px rgba(232,99,122,0.12);
+}
+input[type="number"]::placeholder, input[type="date"]::placeholder {
+  color: var(--ink-muted);
 }
 input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
 
@@ -383,6 +346,47 @@ input[type="range"]::-moz-range-thumb {
   .meas-header > div:first-child { display: none; }
 }
 
+/* ── Dark mode — placed AFTER base styles to win the cascade ── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink:       #eeeef5;
+    --ink-soft:  #a8a8c0;
+    --ink-muted: #6e6e88;
+    --rose:      #e8637a;
+    --rose-pale: rgba(232,99,122,0.15);
+    --rose-mid:  #c04560;
+    --sage:      #7ab8a4;
+    --sage-pale: rgba(91,140,122,0.15);
+    --cream:     #13131f;
+    --white:     #1e1e2e;
+    --border:    rgba(255,255,255,0.08);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-md: 0 8px 32px rgba(0,0,0,0.4);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  body::before {
+    background:
+      radial-gradient(ellipse 70% 50% at 10% 0%,  rgba(232,99,122,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 90% 100%, rgba(91,140,122,0.05) 0%, transparent 50%);
+  }
+  .toggle-wrap  { background: #0e0e1a; }
+  .unit-toggle  { background: #0e0e1a; }
+  .toggle-btn.active { background: #2a2a3e; }
+  input[type="number"], input[type="date"] { background: #17172a !important; color: #eeeef5 !important; border-color: rgba(255,255,255,0.15) !important; }
+  input[type="number"]:focus, input[type="date"]:focus { background: #1e1e32 !important; color: #eeeef5 !important; }
+  input[type="number"]::placeholder, input[type="date"]::placeholder { color: #5c5c7a; }
+  .pill { background: #1a1a2e; }
+  .btn-ghost { border-color: var(--border); }
+  .btn-ghost:hover { background: #2a2a3e; }
+  .btn-export { background: #1e1e2e; color: var(--ink-soft); border-color: var(--border); }
+  .btn-export:hover { background: var(--sage-pale); }
+  .btn-remove { background: #1a1a2a; }
+  .about-card details summary::after { color: var(--rose); }
+  .about-body .disclaimer { background: #2a1e00; border-color: #f4b942; color: #c89a40; }
+  .chart-empty-text { color: var(--ink-muted); }
+  .share-toast { background: #2a2a3e; color: var(--ink); border-color: var(--border); }
+}
+
 /* ── Animations ── */
 @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
 .hero       { animation: fadeUp 0.55s ease both; }
@@ -397,10 +401,6 @@ input[type="range"]::-moz-range-thumb {
 
   <!-- Hero -->
   <header class="hero">
-    <div class="hero-eyebrow">
-      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 3.5v3l2 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-      Evidence-based · Santos et al. 2018
-    </div>
     <h1>Your <em>gestational</em> weight journey</h1>
     <p class="hero-sub">Personalised reference curves from 218,000+ pregnancies across 33 international cohorts.</p>
   </header>
@@ -408,13 +408,13 @@ input[type="range"]::-moz-range-thumb {
   <!-- Chart -->
   <div class="chart-card">
     <div class="chart-top-row">
-      <div class="chart-title">Weight by gestational age</div>
+      <div class="chart-title" id="chartTitle">Weight by gestational age</div>
       <div class="chart-controls-row">
 
         <!-- Weight/gain mode toggle -->
         <div class="toggle-wrap" role="group" aria-label="Chart mode">
-          <button class="toggle-btn active" id="modeAbsolute" type="button">Total weight</button>
-          <button class="toggle-btn"        id="modeGain"     type="button">Weight gain</button>
+          <button class="toggle-btn"        id="modeAbsolute" type="button">Total weight</button>
+          <button class="toggle-btn active" id="modeGain"     type="button">Weight gain</button>
         </div>
 
         <!-- kg / lbs unit toggle -->
@@ -466,26 +466,26 @@ input[type="range"]::-moz-range-thumb {
     <div class="profile-grid">
       <!-- Height -->
       <div class="field">
-        <label class="field-label" for="heightCm">Height</label>
+        <label class="field-label" for="heightCm">HEIGHT</label>
         <div class="field-input-wrap">
-          <input type="number" id="heightCm" min="120" max="220" step="0.5" value="165" placeholder="165">
+          <input type="number" id="heightCm" min="120" max="220" step="0.5" placeholder="e.g. 165">
           <span class="field-unit" id="heightUnit">cm</span>
         </div>
         <div class="range-wrap">
-          <input type="range" id="heightSlider" min="140" max="200" step="1" value="165">
+          <input type="range" id="heightSlider" min="140" max="200" step="1">
           <div class="range-labels"><span>140</span><span>200</span></div>
         </div>
       </div>
 
       <!-- Pre-pregnancy weight -->
       <div class="field">
-        <label class="field-label" for="prePregWeightKg">Pre-pregnancy weight</label>
+        <label class="field-label" for="prePregWeightKg">PRE-PREGNANCY WEIGHT</label>
         <div class="field-input-wrap">
-          <input type="number" id="prePregWeightKg" min="35" max="200" step="0.5" value="60" placeholder="60">
+          <input type="number" id="prePregWeightKg" min="35" max="200" step="0.5" placeholder="e.g. 60">
           <span class="field-unit" id="weightUnit">kg</span>
         </div>
         <div class="range-wrap">
-          <input type="range" id="weightSlider" min="40" max="150" step="0.5" value="60">
+          <input type="range" id="weightSlider" min="40" max="150" step="0.5">
           <div class="range-labels" id="weightSliderLabels"><span>40</span><span>150</span></div>
         </div>
       </div>
@@ -493,11 +493,11 @@ input[type="range"]::-moz-range-thumb {
       <!-- LMP + Due date (stacked in one cell) -->
       <div>
         <div class="field">
-          <label class="field-label" for="lmpDate">Last menstrual period <span style="font-weight:400;color:var(--ink-muted)">(optional)</span></label>
+          <label class="field-label" for="lmpDate">LAST MENSTRUAL PERIOD <span style="font-weight:400;color:var(--ink-muted)">(optional)</span></label>
           <input type="date" id="lmpDate">
         </div>
         <div class="field" style="margin-top:10px">
-          <label class="field-label" for="dueDate">Due date <span style="font-weight:400;color:var(--ink-muted)">(optional)</span></label>
+          <label class="field-label" for="dueDate">DUE DATE <span style="font-weight:400;color:var(--ink-muted)">(optional)</span></label>
           <input type="date" id="dueDate">
         </div>
         <div class="week-computed" id="weekComputed">
@@ -535,7 +535,7 @@ input[type="range"]::-moz-range-thumb {
   <div class="panel panel-full" id="snapshotPanel" style="margin-bottom:20px">
     <div class="panel-title">
       <div class="panel-icon">
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M2 13L7.5 2 13 13" stroke="#e8637a" stroke-width="1.3" stroke-linejoin="round"/><path d="M4 10h7" stroke="#e8637a" stroke-width="1.3"/></svg>
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 5.5a1 1 0 0 1 1-1h1.2l1-1.5h3.6l1 1.5h1.2a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-5Z" stroke="#e8637a" stroke-width="1.2" stroke-linejoin="round"/><circle cx="7.5" cy="8" r="1.8" stroke="#e8637a" stroke-width="1.2"/></svg>
       </div>
       Latest snapshot
     </div>
@@ -589,13 +589,23 @@ const CENTILES = {"Underweight": [{"week": 0.0, "P1": -2.25, "P2.3": -1.92, "P5"
 // ── State ──
 let debounceTimer    = null;
 let measurementIdCounter = 0;
-let chartMode = "absolute"; // "absolute" | "gain"
+let chartMode = "gain";     // "absolute" | "gain"
 let unitMode  = "kg";       // "kg" | "lbs"
 
 const KG_TO_LBS = 2.20462;
+const LBS_TO_KG = 1 / KG_TO_LBS;
+const CM_TO_IN  = 0.393701;
+const IN_TO_CM  = 1 / CM_TO_IN;
 function toDisplay(kg) { return unitMode === "lbs" ? kg * KG_TO_LBS : kg; }
-function toKg(val)     { return unitMode === "lbs" ? val / KG_TO_LBS : val; }
+function toKg(val)     { return unitMode === "lbs" ? val * LBS_TO_KG : val; }
 function unitLabel()   { return unitMode === "lbs" ? "lbs" : "kg"; }
+
+// ── Ordinal suffix ──
+function ordinal(n) {
+  const s = ["th","st","nd","rd"];
+  const v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
 
 // ── BMI helpers (always in kg/cm) ──
 function calcBmi(h, w) { return w / ((h/100)**2); }
@@ -726,7 +736,7 @@ function renderChart(groupData, baseWKg, currentPt, measurements) {
       y: allPts.map(m => cv(isGain ? m.weightKg - baseWKg : m.weightKg)),
       mode:"lines", name:"Your path",
       line:{ width:2.5, color:TEAL_LIGHT },
-      hoverinfo:"skip", showlegend:true
+      hoverinfo:"skip", showlegend:false
     });
   }
 
@@ -735,6 +745,7 @@ function renderChart(groupData, baseWKg, currentPt, measurements) {
     x:[0], y:[cv(isGain ? 0 : baseWKg)],
     mode:"markers", name:"Pre-pregnancy",
     marker:{ size:9, color:GREY, symbol:"circle" },
+    showlegend:false,
     hovertemplate: isGain
       ? `<b>Week 0</b><br>Starting point<extra>Pre-pregnancy</extra>`
       : `<b>Week 0</b><br>Pre-pregnancy weight: ${cv(baseWKg).toFixed(1)} ${ul}<extra>Pre-pregnancy</extra>`
@@ -800,7 +811,9 @@ function renderChart(groupData, baseWKg, currentPt, measurements) {
     hoverlabel:{ bgcolor: isDark() ? "#1e1e2e" : "white", bordercolor:"rgba(128,128,180,0.2)", font:{size:12,color: isDark() ? "#eeeef5" : "#1a1a2e"}, namelength:-1 }
   };
 
-  // Use Plotly.react for smooth animated transitions between states
+  // Update chart title based on mode
+  const titleEl = document.getElementById("chartTitle");
+  if (titleEl) titleEl.textContent = isGain ? "Weight gain by gestational age" : "Weight by gestational age";
   const chartEl = document.getElementById("chart");
   if (chartEl.data) {
     Plotly.react("chart", traces, layout, { responsive:true, displaylogo:false, displayModeBar:false });
@@ -843,24 +856,45 @@ function applyUnit(newUnit) {
     if (el.value !== "") el.value = convert(parseFloat(el.value)).toFixed(1);
   });
 
-  // update height unit label (always cm for simplicity — could add ft/in later)
-  // update slider range labels for weight
+  // update height input range to match unit
+  const hInp = document.getElementById("heightCm");
+  if (unitMode === "lbs") {
+    hInp.min = "55"; hInp.max = "87"; hInp.step = "0.5";
+    if (hInp.value !== "") hInp.value = (parseFloat(hInp.value) * CM_TO_IN).toFixed(1);
+  } else {
+    hInp.min = "120"; hInp.max = "220"; hInp.step = "0.5";
+    if (hInp.value !== "") hInp.value = (parseFloat(hInp.value) / CM_TO_IN).toFixed(1);
+  }
+
+  // update placeholders to match unit
+  document.getElementById("heightCm").placeholder        = unitMode === "lbs" ? "e.g. 65" : "e.g. 165";
+  document.getElementById("prePregWeightKg").placeholder = unitMode === "lbs" ? "e.g. 132" : "e.g. 60";
+  document.getElementById("heightUnit").textContent      = unitMode === "lbs" ? "in" : "cm";
+
+  // update slider ranges and labels
   const slLabels = document.getElementById("weightSliderLabels");
+  const hSl = document.getElementById("heightSlider");
   if (unitMode === "lbs") {
     slLabels.innerHTML = "<span>88</span><span>330</span>";
     const sl = document.getElementById("weightSlider");
     sl.min = 88; sl.max = 330; sl.step = 1;
+    hSl.min = 55; hSl.max = 87; hSl.step = 0.5;
+    document.querySelector("#heightSlider ~ .range-labels").innerHTML = "<span>55</span><span>87</span>";
   } else {
     slLabels.innerHTML = "<span>40</span><span>150</span>";
     const sl = document.getElementById("weightSlider");
     sl.min = 40; sl.max = 150; sl.step = 0.5;
+    hSl.min = 140; hSl.max = 200; hSl.step = 1;
+    document.querySelector("#heightSlider ~ .range-labels").innerHTML = "<span>140</span><span>200</span>";
   }
+  syncSlidersFromInputs();
 }
 
 // ── localStorage ──
 function saveState() {
   try {
     localStorage.setItem("gwc_state", JSON.stringify({
+      v:    2,
       h:    document.getElementById("heightCm").value,
       w:    document.getElementById("prePregWeightKg").value,
       lmp:  document.getElementById("lmpDate").value,
@@ -877,6 +911,8 @@ function loadState() {
     const raw = localStorage.getItem("gwc_state");
     if (!raw) return;
     const s = JSON.parse(raw);
+    // Reject saves from old version that had hardcoded defaults (v1 or missing version)
+    if (!s.v || s.v < 2) { localStorage.removeItem("gwc_state"); return; }
     if (s.unit && s.unit !== unitMode) {
       unitMode = s.unit;
       document.getElementById("unitKg") .classList.toggle("active", unitMode === "kg");
@@ -1018,7 +1054,7 @@ function update() {
     document.getElementById("snapTitle").textContent    = `Most recent · week ${latest.week}`;
     document.getElementById("snapGain").textContent     = (gainD >= 0 ? "+" : "") + gainD.toFixed(1);
     document.getElementById("snapGainLbl").textContent  = unitLabel() + " gained";
-    document.getElementById("snapPct").textContent      = pct != null ? Math.round(pct) + "th" : "—";
+    document.getElementById("snapPct").textContent      = pct != null ? ordinal(Math.round(pct)) : "—";
     document.getElementById("snapPctLabel").textContent = pctLabel(pct);
     sumEl.style.display   = "block";
     emptyEl.style.display = "none";
@@ -1041,6 +1077,8 @@ function syncSlider(inputId, sliderId) {
   const sl  = document.getElementById(sliderId);
   inp.addEventListener("input", () => { sl.value = inp.value; updateSliderFill(sl); debounced(); });
   sl.addEventListener("input",  () => { inp.value = sl.value; updateSliderFill(sl); debounced(); });
+  // Only sync slider to input on init if input already has a value (from localStorage/URL)
+  if (inp.value) { sl.value = inp.value; }
   updateSliderFill(sl);
 }
 
@@ -1288,10 +1326,11 @@ function init() {
   document.getElementById("addMeasurementBtn").addEventListener("click", () => addMeasurementRow());
 
   document.getElementById("sampleBtn").addEventListener("click", () => {
-    document.getElementById("prePregWeightKg").value = toDisplay(60).toFixed(1);
+    document.getElementById("heightCm").value       = "165";
+    document.getElementById("prePregWeightKg").value = "60";
+    syncSlidersFromInputs();
     clearMeasurements();
     [[12,61.2],[20,64.0],[28,68.0]].forEach(([w,kg]) => addMeasurementRow(w, toDisplay(kg).toFixed(1)));
-    syncSlidersFromInputs();
     update();
   });
 
@@ -1309,16 +1348,14 @@ function init() {
   loadFromURL();
   loadState();
 
-  // Fix 3: always default to "Total weight" and "kg" unless explicitly saved otherwise
-  // (localStorage and URL params may have overridden these — reset only on fresh load with no measurements)
+  // Fix 3: always default to "Weight gain" and "kg" unless explicitly saved otherwise
   if (document.querySelectorAll(".meas-row").length === 0 &&
       !new URLSearchParams(location.search).has("mode") &&
       !new URLSearchParams(location.search).has("unit")) {
-    // True fresh load — ensure defaults
-    if (chartMode !== "absolute") {
-      chartMode = "absolute";
-      document.getElementById("modeAbsolute").classList.add("active");
-      document.getElementById("modeGain").classList.remove("active");
+    if (chartMode !== "gain") {
+      chartMode = "gain";
+      document.getElementById("modeGain").classList.add("active");
+      document.getElementById("modeAbsolute").classList.remove("active");
     }
     if (unitMode !== "kg") {
       applyUnit("kg");
