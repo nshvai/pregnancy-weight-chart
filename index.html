@@ -372,9 +372,10 @@ input[type="range"]::-moz-range-thumb {
   .toggle-wrap  { background: #0e0e1a; }
   .unit-toggle  { background: #0e0e1a; }
   .toggle-btn.active { background: #2a2a3e; }
+  :root { color-scheme: dark; }
   input[type="number"], input[type="date"] { background: #17172a !important; color: #eeeef5 !important; border-color: rgba(255,255,255,0.15) !important; }
   input[type="number"]:focus, input[type="date"]:focus { background: #1e1e32 !important; color: #eeeef5 !important; }
-  input[type="number"]::placeholder, input[type="date"]::placeholder { color: #5c5c7a; }
+  input[type="number"]::placeholder, input[type="date"]::placeholder { color: #6e6e88; }
   .pill { background: #1a1a2e; }
   .btn-ghost { border-color: var(--border); }
   .btn-ghost:hover { background: #2a2a3e; }
@@ -446,12 +447,9 @@ input[type="range"]::-moz-range-thumb {
 
     <div class="chart-wrap">
       <div id="chart"></div>
-      <div class="chart-empty" id="chartEmpty">
-        <div class="chart-empty-icon">📈</div>
-        <div class="chart-empty-text">Enter your height and pre-pregnancy weight to see your personalised curve</div>
-      </div>
     </div>
-    <p class="chart-hint">Gestational age in weeks from last menstrual period (LMP) · hover bands for reference range · trimester bands in grey</p>
+    <p class="chart-hint" id="chartHint">Gestational age in weeks from last menstrual period (LMP) · hover bands for reference range · trimester bands in grey</p>
+    <p class="chart-hint" id="chartDefaultHint" style="color:var(--ink-muted);font-style:italic">Showing reference curves for normal BMI · enter your height and weight above to personalise</p>
   </div>
 
   <!-- Your profile (full width, 3-col inner grid) -->
@@ -1026,16 +1024,22 @@ function update() {
   const w  = isFinite(wRaw) ? toKg(wRaw) : NaN;
   const valid = isFinite(h) && isFinite(w) && h>=120 && h<=220 && w>=35 && w<=200;
 
-  document.getElementById("chartEmpty").classList.toggle("hidden", valid);
-  if (!valid) return;
+  document.getElementById("chartEmpty")?.classList.toggle("hidden", true);
+  const defaultHint = document.getElementById("chartDefaultHint");
+  if (defaultHint) defaultHint.style.display = valid ? "none" : "";
 
-  const group     = bmiGroup(calcBmi(h, w));
+  // Always show chart — fall back to Normal weight defaults when no profile entered
+  const DEFAULT_H = 165, DEFAULT_W_KG = 60;
+  const hEff = valid ? h : DEFAULT_H;
+  const wEff = valid ? w : DEFAULT_W_KG;
+
+  const group     = bmiGroup(calcBmi(hEff, wEff));
   const groupData = CENTILES[group];
   if (!groupData) return;
 
   const measurements = getMeasurementsKg();
 
-  renderChart(groupData, w, null, measurements);
+  renderChart(groupData, wEff, null, measurements);
 
   // count badge
   const badge = document.getElementById("measCountBadge");
@@ -1047,7 +1051,7 @@ function update() {
   const emptyEl = document.getElementById("snapshotEmpty");
   if (measurements.length > 0) {
     const latest  = measurements[measurements.length - 1]; // sorted by week
-    const gainKg  = latest.weightKg - w;
+    const gainKg  = latest.weightKg - wEff;
     const gainD   = toDisplay(gainKg);
     const row     = closestRow(groupData, latest.week);
     const pct     = estimatePercentile(row, gainKg);
