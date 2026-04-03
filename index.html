@@ -197,6 +197,16 @@ input[type="number"]:focus, input[type="date"]:focus {
 input[type="number"]::placeholder, input[type="date"]::placeholder {
   color: var(--ink-muted);
 }
+input[type="date"]::-webkit-datetime-edit { color: var(--ink-muted); }
+input[type="date"]::-webkit-datetime-edit-fields-wrapper { color: var(--ink-muted); }
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-year-field { color: var(--ink-muted); }
+input[type="date"].has-value::-webkit-datetime-edit-day-field,
+input[type="date"].has-value::-webkit-datetime-edit-month-field,
+input[type="date"].has-value::-webkit-datetime-edit-year-field,
+input[type="date"].has-value::-webkit-datetime-edit-text { color: var(--ink); }
 input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
 
 /* computed week display */
@@ -376,6 +386,16 @@ input[type="range"]::-moz-range-thumb {
   input[type="number"], input[type="date"] { background: #17172a !important; color: #eeeef5 !important; border-color: rgba(255,255,255,0.15) !important; }
   input[type="number"]:focus, input[type="date"]:focus { background: #1e1e32 !important; color: #eeeef5 !important; }
   input[type="number"]::placeholder, input[type="date"]::placeholder { color: #6e6e88; }
+  input[type="date"]::-webkit-datetime-edit { color: #6e6e88; }
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper { color: #6e6e88; }
+  input[type="date"]::-webkit-datetime-edit-text,
+  input[type="date"]::-webkit-datetime-edit-day-field,
+  input[type="date"]::-webkit-datetime-edit-month-field,
+  input[type="date"]::-webkit-datetime-edit-year-field { color: #6e6e88; }
+  input[type="date"].has-value::-webkit-datetime-edit-day-field,
+  input[type="date"].has-value::-webkit-datetime-edit-month-field,
+  input[type="date"].has-value::-webkit-datetime-edit-year-field,
+  input[type="date"].has-value::-webkit-datetime-edit-text { color: #eeeef5; }
   .pill { background: #1a1a2e; }
   .btn-ghost { border-color: var(--border); }
   .btn-ghost:hover { background: #2a2a3e; }
@@ -670,7 +690,7 @@ function renderChart(groupData, baseWKg, currentPt, measurements) {
   const TEAL       = "#5b8c7a";
   const TEAL_LIGHT = "rgba(91,140,122,0.5)";
   const GREY       = "#8a8a9a";
-  const TRIM_BG    = "rgba(26,26,46,0.035)";
+  const TRIM_BG    = isDark() ? "rgba(255,255,255,0.06)" : "rgba(26,26,46,0.035)";
 
   const ul = unitLabel();
 
@@ -1136,7 +1156,7 @@ function addMeasurementRow(week="", weight="", date="") {
     if (year < 2000) return; // partial year entry — ignore, keep picker open
 
     datePickerActive = false;
-    const measDate = parseDateInput(val);
+    updateDateClass(dateInp);
     if (measDate) {
       const dd = document.getElementById("dueDate").value;
       if (dd) {
@@ -1240,7 +1260,16 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove("show"), 2800);
 }
 
-// ── Recalculate gestational weeks for all rows that have a date filled in ──
+// ── Date input has-value class (for dark mode text colour) ──
+function updateDateClass(inp) {
+  inp.classList.toggle("has-value", !!inp.value);
+}
+function initDateClasses() {
+  document.querySelectorAll("input[type='date']").forEach(inp => {
+    updateDateClass(inp);
+    inp.addEventListener("change", () => updateDateClass(inp));
+  });
+}
 function recalcRowWeeksFromDueDate() {
   const dd = document.getElementById("dueDate").value;
   if (!dd) return;
@@ -1372,6 +1401,8 @@ function init() {
   if (document.querySelectorAll(".meas-row").length === 0) {
     addMeasurementRow();
   }
+
+  initDateClasses(); // sync has-value class for dark mode date text colour
 
   // Re-render chart if system colour scheme changes
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", update);
